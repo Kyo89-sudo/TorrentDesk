@@ -76,6 +76,16 @@ ISCC installer.iss
 
 Con Inno Setup 6 genera `dist/TorrentDesk-0.4.0-Setup-x64.exe`. La CI produce installer, portable e SHA256SUMS come artifact. L'eseguibile non è firmato digitalmente.
 
+### Firma (facoltativa)
+
+Con un certificato di firma del codice su token USB o HSM cloud dell'autorità, esegui `build.cmd` e poi:
+
+```bat
+sign.cmd IMPRONTA_SHA1_CERTIFICATO [URL_TIMESTAMP]
+```
+
+Firma `TorrentDesk.exe`, crea l'installer con l'eseguibile firmato, firma il setup, poi genera il portable e `dist\SHA256SUMS.txt`. Servono Windows SDK (signtool), Inno Setup 6 e Python 3. L'impronta si trova con `certutil -user -store My`. Il server di timestamp predefinito è quello di Certum.
+
 ## Struttura e licenze
 
 `src/torrent.hpp`: bencode e metadati; `src/engine.hpp`: protocollo e sessioni; `src/udp.hpp`: client tracker UDP (BEP 15); `src/main.cpp`: GUI; `src/tests.cpp`: regressioni. `tools/`: tracker e dimostrazioni. La CI Windows compila e verifica i test.

@@ -84,6 +84,16 @@ python tools/package.py
 
 Inno Setup 6 creates `dist/TorrentDesk-0.4.0-Setup-x64.exe`. CI builds the installer, portable archive and SHA256SUMS as an artifact. The packaging script creates clean portable/source archives without sessions, imported torrents or logs. Binaries are not digitally signed. Language catalogs and HTML help are shipped with both distributions.
 
+### Signing (optional)
+
+With a code-signing certificate on a USB token or a CA cloud HSM, run `build.cmd` and then:
+
+```bat
+sign.cmd CERTIFICATE_SHA1_THUMBPRINT [TIMESTAMP_URL]
+```
+
+It signs `TorrentDesk.exe`, builds the installer with the signed executable, signs the setup, then creates the portable archive and `dist\SHA256SUMS.txt`. Requires Windows SDK (signtool), Inno Setup 6 and Python 3. Find the thumbprint with `certutil -user -store My`. The default timestamp server is Certum's.
+
 ## Source and licensing
 
 `src/torrent.hpp`: parsing and infohashes; `src/engine.hpp`: protocol/session engine; `src/udp.hpp`: UDP tracker client (BEP 15); `src/main.cpp`: desktop UI; `src/i18n.hpp`: catalog loading; `src/tests.cpp`: regressions. Windows CI builds and tests the project. See [CONTRIBUTING.md](CONTRIBUTING.md).
