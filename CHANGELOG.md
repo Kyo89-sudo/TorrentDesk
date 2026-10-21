@@ -16,6 +16,7 @@ All notable changes to TorrentDesk. Versions follow [Semantic Versioning](https:
 
 ### Changed
 - Remove asks for confirmation (button, menu and Del key).
+- Tracker warnings and rejections now show the tracker's own message; rows with only a warning are amber, errors stay red.
 
 ## [0.4.0] — 2026-10-21
 

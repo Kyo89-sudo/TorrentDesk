@@ -77,8 +77,13 @@ inline std::string exchange(SOCKET s, const std::string &request, uint32_t actio
                 continue; // stale or foreign datagram
             received += (uint64_t)got;
             auto act = get32(buffer);
-            if (act == 3)
-                throw std::runtime_error("Tracker ha rifiutato l'annuncio.");
+            if (act == 3) {
+                std::string why;
+                for (int i = 8; i < got && why.size() < 200; ++i)
+                    why += (unsigned char)buffer[i] < 0x20 ? ' ' : buffer[i];
+                throw std::runtime_error("Tracker ha rifiutato l'annuncio: " +
+                                         (why.empty() ? std::string("?") : why));
+            }
             if (act != action || (size_t)got < minimum)
                 throw std::runtime_error("Risposta tracker UDP non valida.");
             return std::string(buffer, (size_t)got);

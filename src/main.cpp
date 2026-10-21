@@ -1109,9 +1109,11 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
                     if (d->nmcd.dwDrawStage == CDDS_ITEMPREPAINT) {
                         auto i = (size_t)d->nmcd.dwItemSpec;
                         d->clrTextBk = i % 2 ? RGB(248, 250, 251) : RGB(255, 255, 255);
-                        d->clrText = i < current.rows.size() && !current.rows[i].error.empty()
-                                         ? RGB(164, 63, 40)
-                                         : ink;
+                        // Red: announce errors. Amber: accepted with a tracker warning.
+                        d->clrText = i >= current.rows.size()         ? ink
+                                     : current.rows[i].errors > 0     ? RGB(164, 63, 40)
+                                     : !current.rows[i].error.empty() ? RGB(150, 95, 0)
+                                                                      : ink;
                         return CDRF_DODEFAULT;
                     }
                 }

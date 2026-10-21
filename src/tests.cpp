@@ -130,6 +130,14 @@ int main(int argc, char **argv) {
         REQUIRE(parseReply("d8:completei2e10:incompletei3e8:intervali1e12:min intervali45ee")
                     .interval == 45);
         rejects([&] { parseReply("d14:failure reason4:nopee"); });
+        try {
+            parseReply("d14:failure reason12:unregisterede");
+            REQUIRE(false);
+        } catch (const std::runtime_error &e) {
+            REQUIRE(std::string(e.what()).find("unregistered") != std::string::npos);
+        }
+        REQUIRE(parseReply("d8:intervali60e15:warning message9:slow\ndowne").warning ==
+                "Avviso del tracker: slow down");
         rejects([&] { parseReply("d8:intervali-1ee"); });
         auto work = fs::current_path() / L"work" / L"TorrentDeskTests" /
                     std::to_wstring(GetCurrentProcessId());

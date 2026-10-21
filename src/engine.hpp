@@ -310,12 +310,27 @@ struct TrackerReply {
     int seeders = -1, leechers = -1;
     std::string warning;
 };
+// Tracker-supplied text, made safe for display: printable only, at most 200 bytes.
+inline std::string trackerText(const BValue &v) {
+    if (v.kind != BValue::String)
+        return "?";
+    std::string out;
+    for (unsigned char c : v.text) {
+        if (out.size() >= 200) {
+            out += "…";
+            break;
+        }
+        out += c < 0x20 || c == 0x7f ? ' ' : (char)c;
+    }
+    return out.empty() ? "?" : out;
+}
 inline TrackerReply parseReply(const std::string &bytes, int floor = 30) {
     auto root = BParser(bytes).parse();
     if (root.kind != BValue::Dict)
         throw std::runtime_error("Risposta tracker non valida.");
     if (root.has("failure reason"))
-        throw std::runtime_error("Tracker ha rifiutato l'annuncio.");
+        throw std::runtime_error("Tracker ha rifiutato l'annuncio: " +
+                                 trackerText(root.at("failure reason")));
     TrackerReply r;
     if (root.has("interval")) {
         const auto &v = root.at("interval");
@@ -341,7 +356,7 @@ inline TrackerReply parseReply(const std::string &bytes, int floor = 30) {
     r.seeders = count("complete");
     r.leechers = count("incomplete");
     if (root.has("warning message"))
-        r.warning = "Avviso restituito dal tracker";
+        r.warning = "Avviso del tracker: " + trackerText(root.at("warning message"));
     return r;
 }
 struct DeskConfig {

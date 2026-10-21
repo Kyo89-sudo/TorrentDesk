@@ -82,7 +82,6 @@
     "Sessione ripristinata in pausa.": "Sessione ripristinata in pausa.",
     "Sessione non caricata: ": "Sessione non caricata: ",
     "Chiusura: tempo limite per gli stopped raggiunto.": "Chiusura: tempo limite per gli stopped raggiunto.",
-    "Avviso restituito dal tracker": "Avviso restituito dal tracker",
     "WinHTTP: errore ": "WinHTTP: errore ",
     "Generatore casuale non disponibile.": "Generatore casuale non disponibile.",
     "Profilo peer_id non valido.": "Profilo peer_id non valido.",
@@ -189,6 +188,8 @@
     "Tracker": "Tracker",
     "Copia nome": "Copia nome",
     "Copia infohash": "Copia infohash",
-    "Rimuovere i torrent selezionati?": "Rimuovere i torrent selezionati?"
+    "Rimuovere i torrent selezionati?": "Rimuovere i torrent selezionati?",
+    "Avviso del tracker: ": "Avviso del tracker: ",
+    "Tracker ha rifiutato l'annuncio: ": "Tracker ha rifiutato l'annuncio: "
   }
 }
