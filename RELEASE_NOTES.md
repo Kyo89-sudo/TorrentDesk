@@ -4,6 +4,9 @@ A native Windows x64 educational application for exploring tracker announces.
 
 ### New in 0.4.0
 - **UDP trackers (BEP 15):** torrents with only `udp://` trackers now announce; bounded retries and clear error messages.
+- **Tracker failover:** if the tracker in use fails, the next ones in the torrent are tried and the working one is kept.
+- **HTTP redirects** followed (up to 2, never HTTPS→HTTP).
+- **Torrent list:** sortable columns with remembered widths, new Tracker column, right-click menu (Start/Pause, Remove, Copy name/infohash), Del and Ctrl+A.
 - **rTorrent 0.9.6 profile** supported by the engine (marked experimental): binary peer_id, upper-case URL encoding, persistent peer_id/key.
 - **Client profiles trimmed to 28 recent ones:** qBittorrent 4.6–5.2, Deluge 2.x, Transmission 3.00, rTorrent 0.9.6. Default: qBittorrent 5.2.4.
 - **Refreshed interface:** navy header in the Flow logo colours with the version number, flat command icons in the logo gradient, compact grouped buttons, Start all / Pause all when nothing is selected, tooltips.

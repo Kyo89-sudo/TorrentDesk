@@ -2,6 +2,8 @@
 
 # TorrentDesk
 
+[English](README.md) · [Novità](CHANGELOG.md) · [Release](https://github.com/Kyo89-sudo/TorrentDesk/releases)
+
 Applicazione didattica **C++17 / Win32 per Windows x64**. Interfaccia italiana e inglese, nessun Java o Electron.
 
 **Versione 0.4.0: prototipo funzionante, compatibilità parziale.** Studia parsing bencode, infohash SHA-1, richieste announce HTTP/HTTPS e UDP, scheduling e GUI nativa. Upload e velocità sono **simulati**: non trasferisce il contenuto dei file ad altri peer. Gli annunci al tracker sono richieste reali.
@@ -9,7 +11,8 @@ Applicazione didattica **C++17 / Win32 per Windows x64**. Interfaccia italiana e
 ## Funzioni
 
 - Importazione multipla di `.torrent` v1 e ibridi, anche tramite drag-and-drop.
-- Nome, dimensione, velocità simulata, upload, ratio, seed/leecher e conto alla rovescia.
+- Nome, dimensione, velocità simulata, upload, ratio, seed/leecher, conto alla rovescia e tracker in uso. Clic sull'intestazione per ordinare; ordinamento e larghezza colonne vengono ricordati.
+- Menu tasto destro (Avvia/Pausa, Rimuovi, Copia nome/infohash), Canc per rimuovere con conferma, Ctrl+A per selezionare tutto.
 - Avvia, pausa, rimuovi; senza selezione i pulsanti diventano Avvia tutti / Pausa tutti. Suggerimenti su ogni comando.
 - Tray e, se attiva in Impostazioni, la X nascondono la finestra nell'area di notifica.
 - Velocità minima/massima globali in KiB/s, limite sessioni, ratio obiettivo, porta dichiarata.
@@ -21,7 +24,7 @@ Applicazione didattica **C++17 / Win32 per Windows x64**. Interfaccia italiana e
 
 Inclusi 28 profili client, tutti supportati dal motore: qBittorrent 4.6–5.2, Deluge 2.x, Transmission 3.00 e rTorrent 0.9.6 (sperimentale). Il profilo predefinito è qBittorrent 5.2.4. I client vecchi o non supportati sono stati rimossi. **I profili non sono stati certificati per i client/OS attuali**: il nome di un file non è una prova di conformità. Gli esperimenti e i test forniti usano un tracker locale controllato.
 
-Supporta tracker HTTP/HTTPS e UDP (BEP 15). Non supporta torrent v2 puri, download P2P, DHT, ascolto di connessioni peer, proxy configurabile, autenticazione HTTP o redirect. La porta è solo dichiarata nell'annuncio. Usa il primo tracker HTTP/HTTPS o UDP del torrent; non è ancora implementato il failover tra tracker. Gli stopped in chiusura sono best effort con un budget temporale. Il contatore “annunciato” indica il cumulativo nell'ultimo announce riuscito per sessione, non un trasferimento P2P.
+Supporta tracker HTTP/HTTPS e UDP (BEP 15). Non supporta torrent v2 puri, download P2P, DHT, ascolto di connessioni peer, proxy configurabile o autenticazione HTTP. I redirect HTTP vengono seguiti (massimo 2, senza passare da HTTPS a HTTP). La porta è solo dichiarata nell'annuncio. Failover tra tracker: prima quello in uso, poi gli altri nell'ordine del torrent (massimo 4 per tentativo). Gli stopped in chiusura sono best effort con un budget temporale. Il contatore “annunciato” indica il cumulativo nell'ultimo announce riuscito per sessione, non un trasferimento P2P.
 
 ## Compilazione
 
@@ -94,7 +97,7 @@ Apache-2.0, vedere [LICENSE](LICENSE) e [NOTICE](NOTICE). Profili client e conve
 
 ## Novità 0.4.0
 
-Tracker UDP (BEP 15). Profilo rTorrent 0.9.6 supportato (sperimentale); profili ridotti a 28 client recenti, predefinito qBittorrent 5.2.4. Intestazione blu nei colori del logo con numero di versione, icone piatte, pulsanti raggruppati con Avvia tutti/Pausa tutti e suggerimenti. Impostazione per scegliere se la X riduce nella tray o chiude il programma. Test di conformità con il tracker locale HTTP e UDP.
+Tracker UDP (BEP 15), failover tra tracker e redirect HTTP. Colonne ordinabili con larghezze ricordate, colonna Tracker, menu tasto destro, Canc e Ctrl+A. Profilo rTorrent 0.9.6 supportato (sperimentale); profili ridotti a 28 client recenti, predefinito qBittorrent 5.2.4. Intestazione blu nei colori del logo con numero di versione, icone piatte, pulsanti raggruppati con Avvia tutti/Pausa tutti e suggerimenti. Impostazione per scegliere se la X riduce nella tray o chiude il programma. Test di conformità con il tracker locale HTTP e UDP.
 
 ## Novità 0.3.0
 

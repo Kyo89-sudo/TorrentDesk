@@ -2,7 +2,7 @@
 
 # TorrentDesk
 
-[Italiano](README.it.md) · [Translations](LANGUAGES.md)
+[Italiano](README.it.md) · [Changelog](CHANGELOG.md) · [Translations](LANGUAGES.md) · [Releases](https://github.com/Kyo89-sudo/TorrentDesk/releases)
 
 **Educational Windows x64 application, written in C++17 with a native Win32 UI.** No Java or Electron runtime.
 
@@ -13,7 +13,8 @@ Version **0.4.0 is a working prototype with partial protocol/client compatibilit
 - Flow logo, navy header in the logo palette, flat command icons and the version shown in the header.
 - English and Italian UI, switchable immediately with a remembered preference.
 - Multiple .torrent imports and drag-and-drop; v1 and hybrid metadata.
-- Size, status, simulated speed/upload/ratio, seeders/leechers and announce countdown.
+- Size, status, simulated speed/upload/ratio, seeders/leechers, announce countdown and the tracker in use. Click a header to sort; sort order and column widths are remembered.
+- Right-click menu (Start/Pause, Remove, Copy name/infohash), Del to remove with confirmation, Ctrl+A to select all.
 - Start, pause, remove; with no selection the buttons read Start all / Pause all. Tooltips on every command.
 - Global upload range, simultaneous-session limit, ratio target and announced port.
 - **Tray** (and X, unless turned off in Settings) hides the window while sessions continue. Click the tray icon to reopen it; its menu offers Open, Start all, Pause all, Help and **Exit**.
@@ -24,7 +25,7 @@ Version **0.4.0 is a working prototype with partial protocol/client compatibilit
 
 28 client profiles are included, all supported by the native engine: qBittorrent 4.6–5.2, Deluge 2.x, Transmission 3.00 and rTorrent 0.9.6 (experimental). The default profile is qBittorrent 5.2.4. Older and unsupported clients have been removed. These profiles are **not certified against current client/OS combinations**; a filename/version string is not proof of conformity.
 
-HTTP/HTTPS and UDP (BEP 15) trackers; no pure v2 torrents, payload downloads, DHT, peer listener, configurable proxy, HTTP authentication or redirects. The advertised port is not a listening port. Uses the first HTTP/HTTPS or UDP tracker; tracker failover is not implemented. Torrents are announced complete (`left=0`) without checking files. Shutdown stopped announces are best effort with a time budget.
+HTTP/HTTPS and UDP (BEP 15) trackers; no pure v2 torrents, payload downloads, DHT, peer listener, configurable proxy or HTTP authentication. HTTP redirects are followed (up to 2, no HTTPS→HTTP downgrade). The advertised port is not a listening port. Tracker failover: the tracker in use first, then the others in torrent order (up to 4 per attempt). Torrents are announced complete (`left=0`) without checking files. Shutdown stopped announces are best effort with a time budget.
 
 ## Build
 
