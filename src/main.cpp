@@ -1,3 +1,4 @@
+#include <winsock2.h>
 #include <windows.h>
 #include <commctrl.h>
 #include <commdlg.h>
@@ -253,7 +254,7 @@ std::wstring describe(const TorrentRow &r) {
     if (!r.error.empty())
         out += tr(L"\r\nNota: ") + locale.message(wide(r.error));
     out += tr(L"\r\nTracker nel torrent: ") + std::to_wstring(r.meta.trackers.size()) +
-           tr(L" (HTTP/HTTPS supportati; UDP e v2 puro non supportati).");
+           tr(L" (HTTP/HTTPS e UDP supportati; v2 puro non supportato).");
     return out;
 }
 void refreshPanel() {

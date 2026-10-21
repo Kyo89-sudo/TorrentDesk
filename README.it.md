@@ -20,7 +20,7 @@ Applicazione didattica **C++17 / Win32 per Windows x64**. Interfaccia italiana e
 
 Inclusi 28 profili client, tutti supportati dal motore: qBittorrent 4.6–5.2, Deluge 2.x, Transmission 3.00 e rTorrent 0.9.6 (sperimentale). Il profilo predefinito è qBittorrent 5.2.4. I client vecchi o non supportati sono stati rimossi. **I profili non sono stati certificati per i client/OS attuali**: il nome di un file non è una prova di conformità. Gli esperimenti e i test forniti usano un tracker locale controllato.
 
-Non supporta tracker UDP, torrent v2 puri, download P2P, DHT, ascolto di connessioni peer, proxy configurabile, autenticazione HTTP o redirect. La porta è solo dichiarata nell'annuncio. Usa il primo tracker HTTP/HTTPS del torrent; non è ancora implementato il failover tra tracker. Gli stopped in chiusura sono best effort con un budget temporale. Il contatore “annunciato” indica il cumulativo nell'ultimo announce riuscito per sessione, non un trasferimento P2P.
+Supporta tracker HTTP/HTTPS e UDP (BEP 15). Non supporta torrent v2 puri, download P2P, DHT, ascolto di connessioni peer, proxy configurabile, autenticazione HTTP o redirect. La porta è solo dichiarata nell'annuncio. Usa il primo tracker HTTP/HTTPS o UDP del torrent; non è ancora implementato il failover tra tracker. Gli stopped in chiusura sono best effort con un budget temporale. Il contatore “annunciato” indica il cumulativo nell'ultimo announce riuscito per sessione, non un trasferimento P2P.
 
 ## Compilazione
 

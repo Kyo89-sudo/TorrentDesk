@@ -170,6 +170,39 @@ int main(int argc, char **argv) {
             REQUIRE(parseReply(httpGet("http://127.0.0.1:18765/announce?" + rtDirect, rt).body, 1)
                         .leechers == 3);
             rejects([&] { httpGet("http://127.0.0.1:18765/redirect", profile); });
+            {
+                auto udp = udpAnnounce("udp://127.0.0.1:18765/announce", meta.hash, peer, key, 7,
+                                       "started", 49152, 200, 0x1234u, 1);
+                REQUIRE(udp.leechers == 3 && udp.seeders == 2 && udp.interval == 1);
+                rejects([&] { udpAnnounce("udp://127.0.0.1/announce", meta.hash, peer, key, 0, "",
+                                          1, 1, 1u); });
+                // Engine end-to-end on a UDP-only torrent: started, periodic, stopped.
+                auto udpTorrent = work / L"udp.torrent";
+                {
+                    std::ofstream out(udpTorrent, std::ios::binary);
+                    out << testTorrent("udp://127.0.0.1:18765/announce", true);
+                }
+                DeskEngine engine(work / "udp-session", base / "profiles", 1);
+                engine.add(udpTorrent);
+                engine.setConfig(good);
+                engine.command({}, 1);
+                bool periodic = false;
+                for (int i = 0; i < 80 && !periodic; ++i) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    auto v = engine.view();
+                    periodic = v.rows[0].started && v.rows[0].confirmed > 0;
+                }
+                REQUIRE(periodic);
+                REQUIRE(engine.view().rows[0].leechers == 3);
+                engine.command({}, 2);
+                bool stopped = false;
+                for (int i = 0; i < 80 && !stopped; ++i) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    stopped = !engine.view().rows[0].started;
+                }
+                REQUIRE(stopped);
+                engine.shutdown();
+            }
             rejects([&] { httpGet("http://127.0.0.1:18765/fail", profile); });
             {
                 DeskEngine engine(work / "network-session", base / "profiles", 1);

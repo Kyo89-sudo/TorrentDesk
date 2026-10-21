@@ -1,5 +1,7 @@
 #pragma once
 #include "core.hpp"
+#include <winsock2.h> // must precede windows.h (UDP trackers)
+#include <ws2tcpip.h>
 #include <windows.h>
 #include <bcrypt.h>
 #include <map>

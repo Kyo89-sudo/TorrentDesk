@@ -1,6 +1,7 @@
 #pragma once
 #include "torrent.hpp"
 #include "text.hpp"
+#include "udp.hpp"
 #include <winhttp.h>
 #include <regex>
 #include <chrono>
@@ -500,21 +501,33 @@ class DeskEngine {
                     task.confirmed = 0;
                     task.tracker.clear();
                     for (const auto &url : task.meta.trackers)
-                        if (httpUrl(url)) {
+                        if (httpUrl(url) || udpUrl(url)) {
                             task.tracker = url;
                             break;
                         }
                     if (task.tracker.empty())
                         throw std::runtime_error(
-                            "Nessun tracker HTTP/HTTPS: UDP non ancora supportato.");
+                            "Nessun tracker HTTP/HTTPS o UDP nel torrent.");
                 }
-                auto query = announceQuery(task.profile, task.meta, task.peer, task.key,
-                                           task.uploaded, event, port);
-                auto url = task.tracker +
-                           (task.tracker.find('?') == std::string::npos ? "?" : "&") + query;
-                auto result = httpGet(url, task.profile);
-                responseBytes = result.received;
-                reply = parseReply(result.body, intervalFloor);
+                if (udpUrl(task.tracker)) {
+                    auto numwant =
+                        task.profile.at(event == "stopped" ? "numwantOnStop" : "numwant").get<int>();
+                    auto udp = udpAnnounce(task.tracker, task.meta.hash, task.peer, task.key,
+                                           task.uploaded, event, port, numwant, random32(),
+                                           intervalFloor);
+                    responseBytes = udp.received;
+                    reply.interval = udp.interval;
+                    reply.seeders = udp.seeders;
+                    reply.leechers = udp.leechers;
+                } else {
+                    auto query = announceQuery(task.profile, task.meta, task.peer, task.key,
+                                               task.uploaded, event, port);
+                    auto url = task.tracker +
+                               (task.tracker.find('?') == std::string::npos ? "?" : "&") + query;
+                    auto result = httpGet(url, task.profile);
+                    responseBytes = result.received;
+                    reply = parseReply(result.body, intervalFloor);
+                }
                 ok = true;
             } catch (const std::exception &e) {
                 error = e.what();

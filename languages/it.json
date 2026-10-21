@@ -22,7 +22,7 @@
     "Stato: ": "Stato: ",
     "Nota: ": "Nota: ",
     "Tracker nel torrent: ": "Tracker nel torrent: ",
-    " (HTTP/HTTPS supportati; UDP e v2 puro non supportati).": " (HTTP/HTTPS supportati; UDP e v2 puro non supportati).",
+    " (HTTP/HTTPS e UDP supportati; v2 puro non supportato).": " (HTTP/HTTPS e UDP supportati; v2 puro non supportato).",
     "Profilo selezionato: ": "Profilo selezionato: ",
     "Upload: ": "Upload: ",
     "Storico: ": "Storico: ",
@@ -106,7 +106,7 @@
     "Salvataggio sessione fallito.": "Salvataggio sessione fallito.",
     "Impossibile sostituire il file sessione (Windows ": "Impossibile sostituire il file sessione (Windows ",
     "Profilo non supportato dal motore nativo.": "Profilo non supportato dal motore nativo.",
-    "Nessun tracker HTTP/HTTPS: UDP non ancora supportato.": "Nessun tracker HTTP/HTTPS: UDP non ancora supportato.",
+    "Nessun tracker HTTP/HTTPS o UDP nel torrent.": "Nessun tracker HTTP/HTTPS o UDP nel torrent.",
     "Infohash salvato non valido.": "Infohash salvato non valido.",
     "Infohash salvato non corrispondente.": "Infohash salvato non corrispondente.",
     "Porta non valida.": "Porta non valida.",
@@ -175,6 +175,16 @@
     " [sperimentale]": " [sperimentale]",
     "Chiudendo con X riduci nell'area di notifica": "Chiudendo con X riduci nell'area di notifica",
     "X nasconde nella tray (modificabile in Impostazioni). Per chiudere: menu tray > Esci.": "X nasconde nella tray (modificabile in Impostazioni). Per chiudere: menu tray > Esci.",
-    "X chiude il programma (modificabile in Impostazioni).": "X chiude il programma (modificabile in Impostazioni)."
+    "X chiude il programma (modificabile in Impostazioni).": "X chiude il programma (modificabile in Impostazioni).",
+    "Tracker UDP: nessuna risposta.": "Tracker UDP: nessuna risposta.",
+    "Tracker UDP non raggiungibile.": "Tracker UDP non raggiungibile.",
+    "Risposta tracker UDP non valida.": "Risposta tracker UDP non valida.",
+    "Host tracker UDP non risolto.": "Host tracker UDP non risolto.",
+    "URL tracker UDP non valido.": "URL tracker UDP non valido.",
+    "URL tracker UDP senza porta.": "URL tracker UDP senza porta.",
+    "Socket UDP non disponibile.": "Socket UDP non disponibile.",
+    "Winsock non disponibile.": "Winsock non disponibile.",
+    "Chiave profilo non esadecimale.": "Chiave profilo non esadecimale.",
+    "Annuncio UDP: infohash o peer_id non validi.": "Annuncio UDP: infohash o peer_id non validi."
   }
 }

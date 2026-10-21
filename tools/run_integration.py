@@ -41,9 +41,29 @@ def main():
                     raise RuntimeError(f"Evento non osservato: {event}")
             print("PASS: tracker locale ha osservato started, periodic e stopped")
             check_rtorrent(events)
+            check_udp(events)
         finally:
             server.terminate()
             server.wait(timeout=5)
+
+
+def check_udp(log_text):
+    """Il tracker UDP locale deve aver ricevuto started, periodic e stopped validi."""
+    seen = {}
+    for line in log_text.splitlines():
+        try:
+            item = json.loads(line)
+        except ValueError:
+            continue
+        if item.get("protocol") == "udp":
+            if item["left"] != "0" or len(bytes.fromhex(item["peer_id"])) != 20:
+                raise RuntimeError(f"Annuncio UDP non valido: {item}")
+            seen.setdefault(item["event"], 0)
+            seen[item["event"]] += 1
+    for event in ("started", "periodic", "stopped"):
+        if not seen.get(event):
+            raise RuntimeError(f"Evento UDP non osservato: {event} ({seen})")
+    print(f"PASS: tracker UDP locale (BEP 15) ha osservato {seen}")
 
 
 def check_rtorrent(log_text):
