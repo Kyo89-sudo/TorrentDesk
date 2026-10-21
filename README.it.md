@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/flow-logo.png" alt="TorrentDesk logo" width="160"></p>
+
 # TorrentDesk
 
 Applicazione didattica **C++17 / Win32 per Windows x64**, ispirata a [JOAL](https://github.com/anthonyraymond/joal). Interfaccia italiana e inglese, nessun Java o Electron.

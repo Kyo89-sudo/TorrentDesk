@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/flow-logo.png" alt="TorrentDesk logo" width="160"></p>
+
 # TorrentDesk
 
 [Italiano](README.it.md) · [Translations](LANGUAGES.md)
