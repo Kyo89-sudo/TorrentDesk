@@ -1,42 +1,95 @@
-<p align="center"><img src="assets/flow-logo.png" alt="TorrentDesk logo" width="160"></p>
-<p align="center"><a href="https://github.com/Kyo89-sudo/TorrentDesk/actions/workflows/windows.yml"><img src="https://github.com/Kyo89-sudo/TorrentDesk/actions/workflows/windows.yml/badge.svg" alt="Windows build"></a> <a href="https://github.com/Kyo89-sudo/TorrentDesk/releases"><img src="https://img.shields.io/github/v/release/Kyo89-sudo/TorrentDesk?include_prereleases&label=release" alt="Release"></a> <img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License"></p>
+<p align="center"><img src="assets/flow-logo.png" alt="TorrentDesk logo" width="140"></p>
+<h1 align="center">TorrentDesk</h1>
+<p align="center"><a href="https://github.com/Kyo89-sudo/TorrentDesk/actions/workflows/windows.yml"><img src="https://github.com/Kyo89-sudo/TorrentDesk/actions/workflows/windows.yml/badge.svg" alt="Windows build"></a> <a href="https://github.com/Kyo89-sudo/TorrentDesk/releases"><img src="https://img.shields.io/github/v/release/Kyo89-sudo/TorrentDesk?include_prereleases&label=release" alt="Release"></a> <img src="https://img.shields.io/badge/platform-Windows%20x64-0a1b42" alt="Windows x64"> <img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License"></p>
+<p align="center"><b>Native Windows torrent announce simulator — C++17 / Win32, HTTP/HTTPS and UDP trackers, English and Italian.</b><br>
+<a href="README.it.md">Italiano</a> · <a href="CHANGELOG.md">Changelog</a> · <a href="https://github.com/Kyo89-sudo/TorrentDesk/releases">Download</a> · <a href="LANGUAGES.md">Translations</a></p>
 
-# TorrentDesk
+TorrentDesk is an educational desktop app that loads `.torrent` files and talks to their trackers the way a BitTorrent client does: started, periodic and stopped announces, intervals, seeders/leechers. **Upload and speed are simulated** — no file content is ever transferred to peers — while the tracker requests are real. It is a single native executable: no Java, .NET, Electron or runtime to install.
 
-[Italiano](README.it.md) · [Changelog](CHANGELOG.md) · [Translations](LANGUAGES.md) · [Releases](https://github.com/Kyo89-sudo/TorrentDesk/releases)
+> **Preview (0.4.1).** Working prototype with partial client compatibility. See [Limitations](#limitations).
 
-**Educational Windows x64 application, written in C++17 with a native Win32 UI.** No Java or Electron runtime.
+## Download
 
-Version **0.4.1 is a working prototype with partial protocol/client compatibility**. It explores bencode parsing, SHA-1 infohashes, HTTP/HTTPS and UDP tracker announces, scheduling and desktop UI. Upload and speed are simulated; it does not transfer payload to peers. Tracker requests are real.
+Get the latest version from [Releases](https://github.com/Kyo89-sudo/TorrentDesk/releases):
 
-## Desktop features
+| File | Use |
+|---|---|
+| `TorrentDesk-x.y.z-Setup-x64.exe` | Per-user installer (no admin rights), Italian/English |
+| `TorrentDesk-x.y.z-portable-x64.zip` | Extract and run; data stays in a `data` folder next to the exe |
+| `SHA256SUMS.txt` | Checksums to verify the downloads |
 
-- Flow logo, navy header in the logo palette, flat command icons and the version shown in the header.
-- English and Italian UI, switchable immediately with a remembered preference.
-- Multiple .torrent imports and drag-and-drop; v1 and hybrid metadata.
-- Size, status, simulated speed/upload/ratio, seeders/leechers, announce countdown and the tracker in use. Click a header to sort; sort order and column widths are remembered. Drag the border above the tabs to resize the details area.
-- Right-click menu (Start/Pause, Remove, Copy name/infohash), Del to remove with confirmation, Ctrl+A to select all.
-- Start, pause, remove; with no selection the buttons read Start all / Pause all. Tooltips on every command.
-- Global upload range, simultaneous-session limit, ratio target and announced port.
-- **Tray** (and X, unless turned off in Settings) hides the window while sessions continue. Click the tray icon to reopen it; its menu offers Open, Start all, Pause all, Help and **Exit**.
-- Help tab with logo, version, credits, local documentation and licenses.
-- Atomic session persistence; torrents restart paused. A per-user bilingual installer and a portable package.
+Requires Windows 10/11 x64. Binaries are not code-signed yet, so SmartScreen may warn on first run.
 
-## Explicit limitations
+## Quick start
 
-28 client profiles are included, all supported by the native engine: qBittorrent 4.6–5.2, Deluge 2.x, Transmission 3.00 and rTorrent 0.9.6 (experimental). The default profile is qBittorrent 5.2.4. Older and unsupported clients have been removed. These profiles are **not certified against current client/OS combinations**; a filename/version string is not proof of conformity.
+1. Add `.torrent` files with **Add…** or drag them onto the window.
+2. Pick the upload range, simultaneous sessions, ratio target and client profile in **Settings**.
+3. Press **Start all** (or select rows and press **Start**). Watch status, simulated upload, ratio, seeders/leechers and the next announce.
+4. **Pause** sends the stopped announce. **Tray** hides the window while sessions continue.
 
-HTTP/HTTPS and UDP (BEP 15) trackers; no pure v2 torrents, payload downloads, DHT, peer listener, configurable proxy or HTTP authentication. HTTP redirects are followed (up to 2, no HTTPS→HTTP downgrade). The advertised port is not a listening port. Tracker failover: the tracker in use first, then the others in torrent order (up to 4 per attempt). Torrents are announced complete (`left=0`) without checking files. Shutdown stopped announces are best effort with a time budget.
+Coming from JOAL? **Settings → Import configuration…** reads its `config.json`; then drag in the `.torrent` files from its `torrents` folder.
 
-## Build
+## Features
 
-Visual Studio 2022/2026 or Build Tools, **Desktop development with C++**, Windows SDK. Runtime dependencies are included in the source tree; the build does not download packages.
+**Trackers**
+- HTTP/HTTPS and **UDP (BEP 15)** trackers; v1 and hybrid torrents.
+- **Failover**: the tracker in use first, then the others in the torrent (up to 4 per attempt); the working one is kept.
+- HTTP redirects followed (up to 2, never HTTPS → HTTP); gzip/deflate responses.
+- Tracker intervals honoured, growing back-off on errors, best-effort stopped announces on exit.
+
+**Torrent list**
+- Columns: name, status, size, speed, upload, ratio, seed/leech, next announce, tracker.
+- Click a header to sort; sort order and column widths are remembered.
+- Right-click menu: Start/Pause, Remove, Copy name, Copy infohash. **Del** removes (with confirmation), **Ctrl+A** selects all.
+- With nothing selected the buttons read **Start all / Pause all**.
+- Resizable details area with Details, Activity log, Profiles and counters, Help.
+
+**Desktop**
+- Native Win32 UI, high-DPI aware, navy header in the Flow logo colours, flat icons, tooltips.
+- English and Italian, switchable instantly; the choice is remembered.
+- Notification-area icon with Open, Start all, Pause all, Help, Exit. Setting to choose whether **X** hides to the tray or quits.
+- Atomic session saving; torrents are restored paused.
+
+## Client profiles
+
+28 profiles, all supported by the engine:
+
+| Client | Versions |
+|---|---|
+| qBittorrent | 4.6.0 – 5.2.4 (**default: 5.2.4**) |
+| Deluge | 2.0.3, 2.1.1 |
+| Transmission | 3.00 |
+| rTorrent | 0.9.6 / libtorrent 0.13.6 — *experimental* |
+
+A profile defines peer_id, key, query and HTTP headers. Profiles are **not certified** against current client/OS combinations; a version string is not proof of conformity. UDP has no headers, so there only peer_id and key reflect the profile.
+
+## Limitations
+
+- Upload is simulated; no payload is downloaded or uploaded, no DHT, no peer listener (the announced port is not opened).
+- Torrents are announced complete (`left=0`) without checking files.
+- Pure v2 torrents, configurable proxy and HTTP authentication are not supported. UDP does not use the system proxy.
+- Private trackers have their own rules on allowed clients and reported statistics: read them before using any tracker.
+
+## Data and command line
+
+User data: `%LOCALAPPDATA%\TorrentDesk` (portable: `data` next to the exe). It holds `state.json` (settings, torrents, counters), `ui.json` (language, tray behaviour, columns, panel height) and copies of the imported torrents. Uninstalling keeps it.
+
+| Option | Effect |
+|---|---|
+| `--data-dir PATH` | Use a separate data folder |
+| `--quit --data-dir PATH` | Ask a running instance using that folder to exit cleanly |
+| `--ui-test --data-dir PATH` | Desktop smoke test; writes `ui-smoke.json` |
+| `file.torrent …` | Add torrents at startup |
+
+## Build from source
+
+Visual Studio 2022/2026 or Build Tools with **Desktop development with C++** and the Windows SDK. All dependencies are in the repository; the build downloads nothing.
 
 ```bat
 build.cmd
 ```
 
-Or use CMake:
+or with CMake:
 
 ```bat
 cmake -S . -B build -A x64
@@ -44,60 +97,50 @@ cmake --build build --config Release
 ctest --test-dir build -C Release --output-on-failure
 ```
 
-CMake copies profiles, language catalogs and help files beside the executable. For manual builds keep those folders beside TorrentDesk.exe. To regenerate icon files from the Flow logo and the flat command glyphs, run `python src/make_icon.py` with Pillow installed; this is optional and is not required to build the application.
+`profiles`, `languages`, `docs` and `assets\flow-logo.png` must sit next to `TorrentDesk.exe` (CMake copies them). Icons can be regenerated with `python src/make_icon.py` (Pillow), optional.
 
-## Local learning example
+## Tests
 
-Python 3 is required only for these test tools. In one terminal:
-
-```bat
-python tools/local_tracker.py
-```
-
-In another:
-
-```bat
-python tools/make_example.py examples/local-demo.torrent
-TorrentDesk.exe --data-dir work-demo examples/local-demo.torrent
-```
-
-Click **Start** and observe simulated counters and real announce responses. The generated torrent is synthetic metadata without downloadable payload. The example tracker binds only to `127.0.0.1`.
+`TorrentDeskTests.exe` covers bencode, infohashes, profiles, peer_id/key generation, configuration, persistence and catalogs. The integration run starts a local tracker on `127.0.0.1:18765` (HTTP and UDP) and checks started/periodic/stopped, gzip, errors, redirects, failover, UDP announces and rTorrent request conformance:
 
 ```bat
 python tools/run_integration.py TorrentDeskTests.exe .
 ```
 
-This tests only a controlled local tracker (HTTP and UDP on the same port), including started/periodic/stopped, gzip, pause, errors, redirects and rTorrent profile conformance. The desktop smoke test requires a real Windows desktop with a notification area:
+Try the app against the local tracker only:
 
 ```bat
-TorrentDesk.exe --ui-test --data-dir work-ui-test
+python tools/local_tracker.py
+python tools/make_example.py examples/local-demo.torrent
+TorrentDesk.exe --data-dir work-demo examples/local-demo.torrent
 ```
 
-It switches language, opens Help, hides/restores through tray callbacks, selects Exit and writes `ui-smoke.json` with the results. `--quit --data-dir PATH` requests graceful exit of an instance using that data directory.
+GitHub Actions builds, runs all tests and produces the installer, portable/source archives and `SHA256SUMS.txt` on every push.
 
-## Data and packaging
-
-Default user data: `%LOCALAPPDATA%\TorrentDesk`; `--data-dir PATH` selects a separate folder. Portable archives include `portable.flag` and use a sibling `data` directory. Installed builds do not use that flag. Uninstall preserves user data.
+## Packaging and signing
 
 ```bat
 ISCC installer.iss
 python tools/package.py
 ```
 
-Inno Setup 6 creates `dist/TorrentDesk-0.4.1-Setup-x64.exe`. CI builds the installer, portable archive and SHA256SUMS as an artifact. The packaging script creates clean portable/source archives without sessions, imported torrents or logs. Binaries are not digitally signed. Language catalogs and HTML help are shipped with both distributions.
+With a code-signing certificate (USB token or CA cloud HSM), `sign.cmd THUMBPRINT [TIMESTAMP_URL]` signs the exe, rebuilds and signs the installer, then creates the portable archive and checksums. Find the thumbprint with `certutil -user -store My`.
 
-### Signing (optional)
+## Project layout
 
-With a code-signing certificate on a USB token or a CA cloud HSM, run `build.cmd` and then:
+| Path | Content |
+|---|---|
+| `src/main.cpp` | Desktop UI |
+| `src/engine.hpp` | Session scheduler, HTTP announces, failover |
+| `src/udp.hpp` | UDP tracker client (BEP 15) |
+| `src/torrent.hpp` | Bencode, metadata, infohashes |
+| `src/i18n.hpp`, `languages/` | Translation catalogs |
+| `src/tests.cpp`, `tools/` | Tests, local tracker, packaging |
+| `profiles/` | Client profiles |
+| `docs/` | Local help and licences |
 
-```bat
-sign.cmd CERTIFICATE_SHA1_THUMBPRINT [TIMESTAMP_URL]
-```
+Contributions: see [CONTRIBUTING.md](CONTRIBUTING.md). Translations: see [LANGUAGES.md](LANGUAGES.md).
 
-It signs `TorrentDesk.exe`, builds the installer with the signed executable, signs the setup, then creates the portable archive and `dist\SHA256SUMS.txt`. Requires Windows SDK (signtool), Inno Setup 6 and Python 3. Find the thumbprint with `certutil -user -store My`. The default timestamp server is Certum's.
+## License
 
-## Source and licensing
-
-`src/torrent.hpp`: parsing and infohashes; `src/engine.hpp`: protocol/session engine; `src/udp.hpp`: UDP tracker client (BEP 15); `src/main.cpp`: desktop UI; `src/i18n.hpp`: catalog loading; `src/tests.cpp`: regressions. Windows CI builds and tests the project. See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-Apache-2.0: [LICENSE](LICENSE), [NOTICE](NOTICE). Client profiles and peer/key conventions are derived from third-party Apache-2.0 work (see NOTICE); nlohmann/json is MIT. The original Flow logo was created with imagegen and selected for this project; the command icons are generated by `src/make_icon.py`. Nothing is automatically published to GitHub.
+[Apache-2.0](LICENSE). Client profiles and peer/key conventions derive from third-party Apache-2.0 work — attribution in [NOTICE](NOTICE). [nlohmann/json](https://github.com/nlohmann/json) is MIT.
