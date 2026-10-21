@@ -1,6 +1,7 @@
 #include <winsock2.h>
 #include <windows.h>
 #include <commctrl.h>
+#include <algorithm>
 #include <commdlg.h>
 #include <shellapi.h>
 #include <shlobj.h>
@@ -47,11 +48,26 @@ int uiStage = 0, uiTestExit = 0;
 json uiResults = json::object();
 std::atomic<bool> closed = false;
 bool closeToTray = true; // X hides to the tray (setting, saved in ui.json)
+constexpr int columnCount = 9;
+int sortColumn = -1;       // -1 = order of addition
+bool sortAscending = true;
+bool userWidths = false;   // user resized columns: keep their widths, no auto-fit
+std::vector<int> savedWidths; // in 96-dpi units, from ui.json
 void saveUiPreferences() {
     auto temp = dataDir / L"ui.tmp";
+    json ui = {{"language", locale.code()},
+               {"closeToTray", closeToTray},
+               {"sortColumn", sortColumn},
+               {"sortAscending", sortAscending}};
+    if (userWidths && table) {
+        json widths = json::array();
+        for (int i = 0; i < columnCount; ++i)
+            widths.push_back(MulDiv(ListView_GetColumnWidth(table, i), 96, (int)dpi));
+        ui["columnWidths"] = widths;
+    }
     {
         std::ofstream out(temp);
-        out << json{{"language", locale.code()}, {"closeToTray", closeToTray}}.dump(2);
+        out << ui.dump(2);
         if (!out.flush())
             throw std::runtime_error("Cannot save UI preferences.");
     }
@@ -206,8 +222,10 @@ void layout() {
     int left = std::max(x + group, right - widths[4] - gap - widths[5]);
     MoveWindow(GetDlgItem(mainWindow, 104), left, y, widths[4], h, TRUE);
     MoveWindow(GetDlgItem(mainWindow, 105), left + widths[4] + gap, y, widths[5], h, TRUE);
-    int fixed = px(125 + 90 + 95 + 95 + 65 + 80 + 75);
-    ListView_SetColumnWidth(table, 0, std::max(px(170), width - px(50) - fixed));
+    if (!userWidths) {
+        int fixed = px(125 + 90 + 95 + 95 + 65 + 80 + 75 + 120);
+        ListView_SetColumnWidth(table, 0, std::max(px(170), width - px(50) - fixed));
+    }
     InvalidateRect(mainWindow, nullptr, FALSE);
 }
 // Header band in the Flow logo palette: navy bar, blue->cyan accent line.
@@ -301,11 +319,86 @@ void refreshPanel() {
         }
     }
 }
+// Tracker in use, or the first one the engine would try.
+std::string rowTracker(const TorrentRow &r) {
+    if (!r.tracker.empty())
+        return r.tracker;
+    for (const auto &url : r.meta.trackers)
+        if (httpUrl(url) || udpUrl(url))
+            return url;
+    return r.meta.trackers.empty() ? std::string() : r.meta.trackers.front();
+}
+void sortRows(std::vector<TorrentRow> &rows) {
+    if (sortColumn < 0)
+        return;
+    auto now = std::chrono::steady_clock::now();
+    auto key = [&](const TorrentRow &r) -> double {
+        switch (sortColumn) {
+        case 2: return (double)r.meta.size;
+        case 3: return (double)r.rate;
+        case 4: return (double)r.uploaded;
+        case 5: return r.meta.size ? (double)r.uploaded / r.meta.size : 0;
+        case 6: return r.seeders * 1e7 + r.leechers;
+        case 7:
+            return r.wanted ? std::chrono::duration<double>(r.due - now).count() : 1e18;
+        }
+        return 0;
+    };
+    auto text = [&](const TorrentRow &r) {
+        std::wstring t = sortColumn == 1   ? locale.message(wide(r.status))
+                         : sortColumn == 8 ? wide(trackerHost(rowTracker(r)))
+                                           : wide(r.meta.name);
+        CharLowerBuffW(t.data(), (DWORD)t.size());
+        return t;
+    };
+    bool textual = sortColumn == 0 || sortColumn == 1 || sortColumn == 8;
+    std::stable_sort(rows.begin(), rows.end(), [&](const TorrentRow &a, const TorrentRow &b) {
+        bool less;
+        if (textual) {
+            auto x = text(a), y = text(b);
+            if (x == y)
+                return false;
+            less = x < y;
+        } else {
+            auto x = key(a), y = key(b);
+            if (x == y)
+                return false;
+            less = x < y;
+        }
+        return sortAscending ? less : !less;
+    });
+}
+void updateSortArrow() {
+    auto header = ListView_GetHeader(table);
+    for (int i = 0; i < columnCount; ++i) {
+        HDITEM item = {};
+        item.mask = HDI_FORMAT;
+        Header_GetItem(header, i, &item);
+        item.fmt &= ~(HDF_SORTUP | HDF_SORTDOWN);
+        if (i == sortColumn)
+            item.fmt |= sortAscending ? HDF_SORTUP : HDF_SORTDOWN;
+        Header_SetItem(header, i, &item);
+    }
+}
+void copyToClipboard(HWND w, const std::wstring &text) {
+    if (!OpenClipboard(w))
+        return;
+    EmptyClipboard();
+    auto bytes = (text.size() + 1) * sizeof(wchar_t);
+    if (auto mem = GlobalAlloc(GMEM_MOVEABLE, bytes)) {
+        memcpy(GlobalLock(mem), text.c_str(), bytes);
+        GlobalUnlock(mem);
+        if (!SetClipboardData(CF_UNICODETEXT, mem))
+            GlobalFree(mem);
+    }
+    CloseClipboard();
+}
 void refresh(bool sample = false) {
     if (!engine)
         return;
     auto ids = selected();
     current = engine->view();
+    sortRows(current.rows);
     refreshLock = true;
     SendMessage(table, WM_SETREDRAW, FALSE, 0);
     bool rebuild = visibleIds.size() != current.rows.size();
@@ -345,8 +438,9 @@ void refresh(bool sample = false) {
                                (r.seeders < 0 ? L"—" : std::to_wstring(r.seeders)) + L" / " +
                                    (r.leechers < 0 ? L"—" : std::to_wstring(r.leechers)),
                                r.wanted ? std::to_wstring(std::max(int64_t(0), sec)) + L" s"
-                                        : L"—"};
-        for (int col = 0; col < 8; ++col)
+                                        : L"—",
+                               wide(trackerHost(rowTracker(r)))};
+        for (int col = 0; col < columnCount; ++col)
             ListView_SetItemText(table, (int)i, col, cols[col].data());
     }
     SendMessage(table, WM_SETREDRAW, TRUE, 0);
@@ -660,6 +754,10 @@ void beginExit() {
         DestroyWindow(settingsWindow);
     if (closing)
         return;
+    try {
+        saveUiPreferences();
+    } catch (...) {
+    }
     closing = true;
     for (int id = 100; id <= 105; ++id)
         EnableWindow(GetDlgItem(mainWindow, id), FALSE);
@@ -673,9 +771,9 @@ void beginExit() {
 }
 void applyLanguage() {
     updateCommands();
-    const wchar_t *columns[] = {L"Nome",   L"Stato", L"Dimensione",   L"Velocità",
-                                L"Upload", L"Ratio", L"Seed / Leech", L"Announce"};
-    for (int i = 0; i < 8; ++i) {
+    const wchar_t *columns[] = {L"Nome",   L"Stato", L"Dimensione",   L"Velocità", L"Upload",
+                                L"Ratio",  L"Seed / Leech", L"Announce", L"Tracker"};
+    for (int i = 0; i < columnCount; ++i) {
         auto t = tr(columns[i]);
         LVCOLUMN col = {};
         col.mask = LVCF_TEXT;
@@ -772,18 +870,21 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
             ListView_SetBkColor(table, RGB(255, 255, 255));
             ListView_SetTextBkColor(table, RGB(255, 255, 255));
             ListView_SetTextColor(table, ink);
-            const wchar_t *columns[] = {L"Nome",   L"Stato", L"Dimensione",   L"Velocità",
-                                        L"Upload", L"Ratio", L"Seed / Leech", L"Announce"};
-            int widths[] = {230, 125, 90, 95, 95, 65, 80, 75};
-            for (int i = 0; i < 8; ++i) {
+            const wchar_t *columns[] = {L"Nome",  L"Stato",        L"Dimensione", L"Velocità",
+                                        L"Upload", L"Ratio",       L"Seed / Leech", L"Announce",
+                                        L"Tracker"};
+            int widths[] = {230, 125, 90, 95, 95, 65, 80, 75, 120};
+            userWidths = savedWidths.size() == (size_t)columnCount;
+            for (int i = 0; i < columnCount; ++i) {
                 LVCOLUMN c = {};
                 c.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_FMT;
                 auto label = tr(columns[i]);
                 c.pszText = label.data();
-                c.cx = px(widths[i]);
-                c.fmt = i > 1 ? LVCFMT_RIGHT : LVCFMT_LEFT;
+                c.cx = px(userWidths ? std::clamp(savedWidths[i], 30, 1200) : widths[i]);
+                c.fmt = i > 1 && i < 8 ? LVCFMT_RIGHT : LVCFMT_LEFT;
                 ListView_InsertColumn(table, i, &c);
             }
+            updateSortArrow();
             tabs = CreateWindowEx(0, WC_TABCONTROL, L"Dettagli", WS_CHILD | WS_VISIBLE | WS_TABSTOP,
                                   0, 0, 100, 30, w, (HMENU)121, appInstance, nullptr);
             for (auto s : {L"Dettagli", L"Registro attività", L"Profili e contatori", L"Aiuto"}) {
@@ -882,7 +983,59 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
                 refreshPanel();
                 return 0;
             }
+            if (table && h->hwndFrom == ListView_GetHeader(table) &&
+                (h->code == HDN_ENDTRACK || h->code == HDN_DIVIDERDBLCLICK)) {
+                userWidths = true;
+                return 0;
+            }
             if (h->hwndFrom == table) {
+                if (h->code == LVN_COLUMNCLICK) {
+                    int col = ((NMLISTVIEW *)b)->iSubItem;
+                    if (col == sortColumn)
+                        sortAscending = !sortAscending;
+                    else {
+                        sortColumn = col;
+                        sortAscending = col == 0 || col == 1 || col == 8;
+                    }
+                    updateSortArrow();
+                    try {
+                        saveUiPreferences();
+                    } catch (...) {
+                    }
+                    refresh();
+                    return 0;
+                }
+                if (h->code == LVN_KEYDOWN) {
+                    auto key = ((NMLVKEYDOWN *)b)->wVKey;
+                    if (key == VK_DELETE)
+                        PostMessage(w, WM_COMMAND, 103, 0);
+                    else if (key == 'A' && (GetKeyState(VK_CONTROL) & 0x8000))
+                        ListView_SetItemState(table, -1, LVIS_SELECTED, LVIS_SELECTED);
+                    return 0;
+                }
+                if (h->code == NM_RCLICK) {
+                    bool none = ListView_GetSelectedCount(table) == 0;
+                    HMENU menu = CreatePopupMenu();
+                    auto add = [&](UINT id, const wchar_t *label, bool enabled) {
+                        auto t = tr(label);
+                        AppendMenu(menu, MF_STRING | (enabled ? 0 : MF_GRAYED), id, t.c_str());
+                    };
+                    bool any = !current.rows.empty();
+                    add(101, commandLabel(1, none), any);
+                    add(102, commandLabel(2, none), any);
+                    add(103, L"Rimuovi", !none);
+                    AppendMenu(menu, MF_SEPARATOR, 0, nullptr);
+                    add(310, L"Copia nome", !none);
+                    add(311, L"Copia infohash", !none);
+                    POINT pt;
+                    GetCursorPos(&pt);
+                    UINT id = TrackPopupMenu(menu, TPM_RETURNCMD | TPM_RIGHTBUTTON, pt.x, pt.y, 0,
+                                             w, nullptr);
+                    DestroyMenu(menu);
+                    if (id)
+                        PostMessage(w, WM_COMMAND, id, 0);
+                    return 0;
+                }
                 if (h->code == LVN_ITEMCHANGED && !refreshLock) {
                     updateCommands();
                     refreshPanel();
@@ -993,6 +1146,9 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
                     MessageBox(w, L"Seleziona i torrent da rimuovere.", L"TorrentDesk", MB_OK);
                     break;
                 }
+                if (MessageBox(w, L"Rimuovere i torrent selezionati?", L"TorrentDesk",
+                               MB_YESNO | MB_ICONQUESTION) != IDYES)
+                    break;
                 engine->command(ids, 3);
                 refresh();
                 break;
@@ -1000,6 +1156,18 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
             case 104:
                 openSettings();
                 break;
+            case 310:
+            case 311: {
+                std::wstring text;
+                for (int i = -1; (i = ListView_GetNextItem(table, i, LVNI_SELECTED)) != -1;)
+                    if ((size_t)i < current.rows.size())
+                        text += (text.empty() ? L"" : L"\r\n") +
+                                wide(LOWORD(a) == 310 ? current.rows[i].meta.name
+                                                      : hex(current.rows[i].meta.hash));
+                if (!text.empty())
+                    copyToClipboard(w, text);
+                break;
+            }
             case 105:
                 hideToTray();
                 break;
@@ -1143,6 +1311,12 @@ int WINAPI wWinMain(HINSTANCE h, HINSTANCE, LPWSTR, int n) {
                 auto ui = readJson(dataDir / L"ui.json");
                 language = ui.value("language", language);
                 closeToTray = ui.value("closeToTray", true);
+                sortColumn = std::clamp(ui.value("sortColumn", -1), -1, columnCount - 1);
+                sortAscending = ui.value("sortAscending", true);
+                if (ui.contains("columnWidths") && ui["columnWidths"].is_array())
+                    for (const auto &v : ui["columnWidths"])
+                        if (v.is_number_integer())
+                            savedWidths.push_back(v.get<int>());
             }
         } catch (...) {
         }

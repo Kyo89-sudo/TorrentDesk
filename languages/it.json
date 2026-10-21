@@ -185,6 +185,10 @@
     "Socket UDP non disponibile.": "Socket UDP non disponibile.",
     "Winsock non disponibile.": "Winsock non disponibile.",
     "Chiave profilo non esadecimale.": "Chiave profilo non esadecimale.",
-    "Annuncio UDP: infohash o peer_id non validi.": "Annuncio UDP: infohash o peer_id non validi."
+    "Annuncio UDP: infohash o peer_id non validi.": "Annuncio UDP: infohash o peer_id non validi.",
+    "Tracker": "Tracker",
+    "Copia nome": "Copia nome",
+    "Copia infohash": "Copia infohash",
+    "Rimuovere i torrent selezionati?": "Rimuovere i torrent selezionati?"
   }
 }

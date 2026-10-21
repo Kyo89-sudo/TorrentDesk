@@ -26,6 +26,13 @@ struct HttpHandle {
     HttpHandle(const HttpHandle &) = delete;
     operator HINTERNET() const { return h; }
 };
+// "udp://tracker.example:6969/announce" -> "tracker.example"
+inline std::string trackerHost(const std::string &url) {
+    auto start = url.find("://");
+    start = start == std::string::npos ? 0 : start + 3;
+    auto end = url.find_first_of(":/?#", url[start] == '[' ? url.find(']', start) : start);
+    return url.substr(start, end == std::string::npos ? std::string::npos : end - start);
+}
 inline bool httpUrl(const std::string &s) {
     return s.rfind("http://", 0) == 0 || s.rfind("https://", 0) == 0;
 }
@@ -180,7 +187,12 @@ struct HttpResult {
     std::string body;
     uint64_t received = 0;
 };
-inline HttpResult httpGet(const std::string &url, const json &p) {
+struct HttpOnce {
+    DWORD status = 0;
+    std::string location;
+    HttpResult result;
+};
+inline HttpOnce httpGetOnce(const std::string &url, const json &p) {
     auto u = wide(url);
     URL_COMPONENTS c = {sizeof(c)};
     c.dwHostNameLength = c.dwUrlPathLength = c.dwExtraInfoLength = c.dwUserNameLength =
@@ -227,14 +239,30 @@ inline HttpResult httpGet(const std::string &url, const json &p) {
         !WinHttpReceiveResponse(request, nullptr))
         throw std::runtime_error("Tracker non raggiungibile (WinHTTP " +
                                  std::to_string(GetLastError()) + ").");
+    HttpOnce once;
     DWORD status = 0, len = sizeof(status);
     if (!WinHttpQueryHeaders(request, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
                              WINHTTP_HEADER_NAME_BY_INDEX, &status, &len,
-                             WINHTTP_NO_HEADER_INDEX) ||
-        status != 200)
-        throw std::runtime_error("Tracker HTTP " + std::to_string(status) +
-                                 " (redirect non seguito).");
-    HttpResult result;
+                             WINHTTP_NO_HEADER_INDEX))
+        throw std::runtime_error("Risposta tracker non valida.");
+    once.status = status;
+    if (status == 301 || status == 302 || status == 303 || status == 307 || status == 308) {
+        DWORD bytes = 0;
+        WinHttpQueryHeaders(request, WINHTTP_QUERY_LOCATION, WINHTTP_HEADER_NAME_BY_INDEX,
+                            WINHTTP_NO_OUTPUT_BUFFER, &bytes, WINHTTP_NO_HEADER_INDEX);
+        if (bytes && bytes < 8192) {
+            std::wstring loc(bytes / sizeof(wchar_t), 0);
+            if (WinHttpQueryHeaders(request, WINHTTP_QUERY_LOCATION, WINHTTP_HEADER_NAME_BY_INDEX,
+                                    loc.data(), &bytes, WINHTTP_NO_HEADER_INDEX)) {
+                loc.resize(bytes / sizeof(wchar_t));
+                once.location = utf8(loc);
+            }
+        }
+        return once;
+    }
+    if (status != 200)
+        throw std::runtime_error("Tracker HTTP " + std::to_string(status) + ".");
+    auto &result = once.result;
     char buffer[16384];
     DWORD got = 0;
     auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(12);
@@ -249,7 +277,33 @@ inline HttpResult httpGet(const std::string &url, const json &p) {
         result.body.append(buffer, got);
         result.received += got;
     }
-    return result;
+    return once;
+}
+// Follows up to two redirects. Relative locations stay on the same host; an absolute one
+// must be HTTP(S) and may not downgrade HTTPS to HTTP.
+inline HttpResult httpGet(const std::string &url, const json &p) {
+    std::string current = url;
+    for (int hop = 0; hop <= 2; ++hop) {
+        auto once = httpGetOnce(current, p);
+        if (once.location.empty() && once.status == 200)
+            return once.result;
+        if (once.location.empty() || hop == 2)
+            throw std::runtime_error("Tracker HTTP " + std::to_string(once.status) +
+                                     ": troppi redirect o destinazione mancante.");
+        std::string next = once.location;
+        if (next.find_first_of("\r\n") != std::string::npos)
+            throw std::runtime_error("Redirect tracker non valido.");
+        if (next[0] == '/') {
+            auto scheme = current.find("://");
+            auto slash = current.find('/', scheme + 3);
+            next = current.substr(0, slash) + next;
+        } else if (!httpUrl(next))
+            throw std::runtime_error("Redirect tracker non valido.");
+        if (current.rfind("https://", 0) == 0 && next.rfind("http://", 0) == 0)
+            throw std::runtime_error("Redirect tracker da HTTPS a HTTP rifiutato.");
+        current = next;
+    }
+    throw std::runtime_error("Troppi redirect.");
 }
 struct TrackerReply {
     int64_t interval = 1800;
@@ -467,6 +521,7 @@ class DeskEngine {
             if (!work)
                 continue;
             bool ok = false;
+            std::string switched;
             TrackerReply reply;
             std::string error;
             uint64_t responseBytes = 0;
@@ -500,35 +555,34 @@ class DeskEngine {
                     task.uploaded = 0;
                     task.confirmed = 0;
                     task.tracker.clear();
-                    for (const auto &url : task.meta.trackers)
-                        if (httpUrl(url) || udpUrl(url)) {
-                            task.tracker = url;
-                            break;
-                        }
-                    if (task.tracker.empty())
-                        throw std::runtime_error(
-                            "Nessun tracker HTTP/HTTPS o UDP nel torrent.");
                 }
-                if (udpUrl(task.tracker)) {
-                    auto numwant =
-                        task.profile.at(event == "stopped" ? "numwantOnStop" : "numwant").get<int>();
-                    auto udp = udpAnnounce(task.tracker, task.meta.hash, task.peer, task.key,
-                                           task.uploaded, event, port, numwant, random32(),
-                                           intervalFloor);
-                    responseBytes = udp.received;
-                    reply.interval = udp.interval;
-                    reply.seeders = udp.seeders;
-                    reply.leechers = udp.leechers;
-                } else {
-                    auto query = announceQuery(task.profile, task.meta, task.peer, task.key,
-                                               task.uploaded, event, port);
-                    auto url = task.tracker +
-                               (task.tracker.find('?') == std::string::npos ? "?" : "&") + query;
-                    auto result = httpGet(url, task.profile);
-                    responseBytes = result.received;
-                    reply = parseReply(result.body, intervalFloor);
+                // Failover: the current tracker first, then the others in torrent order
+                // (announce, then announce-list tiers). At most 4 per attempt to bound delays.
+                std::vector<std::string> candidates;
+                if (!task.tracker.empty())
+                    candidates.push_back(task.tracker);
+                for (const auto &url : task.meta.trackers)
+                    if ((httpUrl(url) || udpUrl(url)) && url != task.tracker)
+                        candidates.push_back(url);
+                if (candidates.empty())
+                    throw std::runtime_error("Nessun tracker HTTP/HTTPS o UDP nel torrent.");
+                if (candidates.size() > 4)
+                    candidates.resize(4);
+                std::string lastError;
+                for (const auto &url : candidates) {
+                    try {
+                        reply = announceTo(task, url, event, port, responseBytes);
+                        if (!task.tracker.empty() && url != task.tracker)
+                            switched = url;
+                        task.tracker = url;
+                        ok = true;
+                        break;
+                    } catch (const std::exception &e) {
+                        lastError = e.what();
+                    }
                 }
-                ok = true;
+                if (!ok)
+                    throw std::runtime_error(lastError);
             } catch (const std::exception &e) {
                 error = e.what();
             }
@@ -543,6 +597,9 @@ class DeskEngine {
                 r.busy = false;
                 received += responseBytes;
                 if (ok) {
+                    r.tracker = task.tracker;
+                    if (!switched.empty())
+                        log("Tracker alternativo per " + r.meta.name + ": " + trackerHost(switched));
                     r.errors = 0;
                     r.error = reply.warning;
                     if (event == "started") {
@@ -600,6 +657,28 @@ class DeskEngine {
         } catch (const std::exception &e) {
             log(e.what());
         }
+    }
+
+    TrackerReply announceTo(const TorrentRow &task, const std::string &url,
+                            const std::string &event, int port, uint64_t &bytes) {
+        if (udpUrl(url)) {
+            auto numwant =
+                task.profile.at(event == "stopped" ? "numwantOnStop" : "numwant").get<int>();
+            auto udp = udpAnnounce(url, task.meta.hash, task.peer, task.key, task.uploaded, event,
+                                   port, numwant, random32(), intervalFloor);
+            bytes += udp.received;
+            TrackerReply reply;
+            reply.interval = udp.interval;
+            reply.seeders = udp.seeders;
+            reply.leechers = udp.leechers;
+            return reply;
+        }
+        auto query =
+            announceQuery(task.profile, task.meta, task.peer, task.key, task.uploaded, event, port);
+        auto full = url + (url.find('?') == std::string::npos ? "?" : "&") + query;
+        auto result = httpGet(full, task.profile);
+        bytes += result.received;
+        return parseReply(result.body, intervalFloor);
     }
 
   public:

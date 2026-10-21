@@ -25,7 +25,12 @@ def main():
                 body = b"ok"
             elif url.path == "/redirect":
                 self.send_response(302)
-                self.send_header("Location", "/announce")
+                self.send_header("Location", "/announce?" + url.query)
+                self.end_headers()
+                return
+            elif url.path == "/loop":
+                self.send_response(302)
+                self.send_header("Location", "/loop")
                 self.end_headers()
                 return
             elif url.path == "/fail":

@@ -169,7 +169,35 @@ int main(int argc, char **argv) {
             auto rtDirect = announceQuery(rt, meta, rtPeer, rtKey, 0, "started", 40000);
             REQUIRE(parseReply(httpGet("http://127.0.0.1:18765/announce?" + rtDirect, rt).body, 1)
                         .leechers == 3);
-            rejects([&] { httpGet("http://127.0.0.1:18765/redirect", profile); });
+            REQUIRE(parseReply(httpGet("http://127.0.0.1:18765/redirect?" + query, profile).body, 1)
+                        .leechers == 3);
+            rejects([&] { httpGet("http://127.0.0.1:18765/loop", profile); });
+            {
+                // Failover: the first tracker answers 503, the engine must use the second one.
+                std::string info = "d6:lengthi5e4:name12:failover.bin12:piece lengthi16384e"
+                                   "6:pieces20:" + std::string(20, 'y') + "e";
+                std::string badUrl = "http://127.0.0.1:18765/fail",
+                            goodUrl = "http://127.0.0.1:18765/announce";
+                auto failover = work / L"failover.torrent";
+                {
+                    std::ofstream out(failover, std::ios::binary);
+                    out << "d8:announce" + str(badUrl) + "13:announce-listll" + str(badUrl) +
+                               "el" + str(goodUrl) + "ee4:info" + info + "e";
+                }
+                DeskEngine engine(work / "failover-session", base / "profiles", 1);
+                engine.add(failover);
+                engine.setConfig(good);
+                engine.command({}, 1);
+                bool started = false;
+                for (int i = 0; i < 80 && !started; ++i) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    started = engine.view().rows[0].started;
+                }
+                REQUIRE(started && engine.view().rows[0].tracker == goodUrl);
+                REQUIRE(trackerHost(goodUrl) == "127.0.0.1");
+                REQUIRE(trackerHost("udp://[::1]:6969/announce") == "[::1]");
+                engine.shutdown();
+            }
             {
                 auto udp = udpAnnounce("udp://127.0.0.1:18765/announce", meta.hash, peer, key, 7,
                                        "started", 49152, 200, 0x1234u, 1);
