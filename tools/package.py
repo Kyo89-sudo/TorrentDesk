@@ -4,7 +4,7 @@ from zipfile import ZipFile, ZIP_DEFLATED
 
 ROOT = Path(__file__).resolve().parent.parent
 DIST = ROOT / "dist"
-VERSION = "0.4.0"
+VERSION = "0.4.1"
 
 
 def main():

@@ -7,7 +7,7 @@
 
 **Educational Windows x64 application, written in C++17 with a native Win32 UI.** No Java or Electron runtime.
 
-Version **0.4.0 is a working prototype with partial protocol/client compatibility**. It explores bencode parsing, SHA-1 infohashes, HTTP/HTTPS and UDP tracker announces, scheduling and desktop UI. Upload and speed are simulated; it does not transfer payload to peers. Tracker requests are real.
+Version **0.4.1 is a working prototype with partial protocol/client compatibility**. It explores bencode parsing, SHA-1 infohashes, HTTP/HTTPS and UDP tracker announces, scheduling and desktop UI. Upload and speed are simulated; it does not transfer payload to peers. Tracker requests are real.
 
 ## Desktop features
 
@@ -84,7 +84,7 @@ ISCC installer.iss
 python tools/package.py
 ```
 
-Inno Setup 6 creates `dist/TorrentDesk-0.4.0-Setup-x64.exe`. CI builds the installer, portable archive and SHA256SUMS as an artifact. The packaging script creates clean portable/source archives without sessions, imported torrents or logs. Binaries are not digitally signed. Language catalogs and HTML help are shipped with both distributions.
+Inno Setup 6 creates `dist/TorrentDesk-0.4.1-Setup-x64.exe`. CI builds the installer, portable archive and SHA256SUMS as an artifact. The packaging script creates clean portable/source archives without sessions, imported torrents or logs. Binaries are not digitally signed. Language catalogs and HTML help are shipped with both distributions.
 
 ### Signing (optional)
 

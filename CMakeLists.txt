@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(TorrentDesk VERSION 0.4.0 LANGUAGES CXX RC)
+project(TorrentDesk VERSION 0.4.1 LANGUAGES CXX RC)
 if(NOT WIN32)
   message(FATAL_ERROR "TorrentDesk uses the Windows Win32 API.")
 endif()

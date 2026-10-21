@@ -7,7 +7,7 @@
 
 Applicazione didattica **C++17 / Win32 per Windows x64**. Interfaccia italiana e inglese, nessun Java o Electron.
 
-**Versione 0.4.0: prototipo funzionante, compatibilità parziale.** Studia parsing bencode, infohash SHA-1, richieste announce HTTP/HTTPS e UDP, scheduling e GUI nativa. Upload e velocità sono **simulati**: non trasferisce il contenuto dei file ad altri peer. Gli annunci al tracker sono richieste reali.
+**Versione 0.4.1: prototipo funzionante, compatibilità parziale.** Studia parsing bencode, infohash SHA-1, richieste announce HTTP/HTTPS e UDP, scheduling e GUI nativa. Upload e velocità sono **simulati**: non trasferisce il contenuto dei file ad altri peer. Gli annunci al tracker sono richieste reali.
 
 ## Funzioni
 
@@ -78,7 +78,7 @@ Dati predefiniti: `%LOCALAPPDATA%\TorrentDesk`. `--data-dir PERCORSO` sceglie un
 ISCC installer.iss
 ```
 
-Con Inno Setup 6 genera `dist/TorrentDesk-0.4.0-Setup-x64.exe`. La CI produce installer, portable e SHA256SUMS come artifact. L'eseguibile non è firmato digitalmente.
+Con Inno Setup 6 genera `dist/TorrentDesk-0.4.1-Setup-x64.exe`. La CI produce installer, portable e SHA256SUMS come artifact. L'eseguibile non è firmato digitalmente.
 
 ### Firma (facoltativa)
 
@@ -96,9 +96,13 @@ Firma `TorrentDesk.exe`, crea l'installer con l'eseguibile firmato, firma il set
 
 Apache-2.0, vedere [LICENSE](LICENSE) e [NOTICE](NOTICE). Profili client e convenzioni peer/key derivati da lavoro di terzi Apache-2.0 (vedere NOTICE); `nlohmann/json` è MIT. Per contribuire, vedere [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Novità 0.4.1
+
+Failover tra tracker e redirect HTTP. Colonne ordinabili con larghezze ricordate, colonna Tracker, menu tasto destro, Canc con conferma e Ctrl+A. Script `sign.cmd` per la firma locale.
+
 ## Novità 0.4.0
 
-Tracker UDP (BEP 15), failover tra tracker e redirect HTTP. Colonne ordinabili con larghezze ricordate, colonna Tracker, menu tasto destro, Canc e Ctrl+A. Profilo rTorrent 0.9.6 supportato (sperimentale); profili ridotti a 28 client recenti, predefinito qBittorrent 5.2.4. Intestazione blu nei colori del logo con numero di versione, icone piatte, pulsanti raggruppati con Avvia tutti/Pausa tutti e suggerimenti. Impostazione per scegliere se la X riduce nella tray o chiude il programma. Test di conformità con il tracker locale HTTP e UDP.
+Tracker UDP (BEP 15). Profilo rTorrent 0.9.6 supportato (sperimentale); profili ridotti a 28 client recenti, predefinito qBittorrent 5.2.4. Intestazione blu nei colori del logo con numero di versione, icone piatte, pulsanti raggruppati con Avvia tutti/Pausa tutti e suggerimenti. Impostazione per scegliere se la X riduce nella tray o chiude il programma. Test di conformità con il tracker locale HTTP e UDP.
 
 ## Novità 0.3.0
 

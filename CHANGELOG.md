@@ -2,22 +2,30 @@
 
 All notable changes to TorrentDesk. Versions follow [Semantic Versioning](https://semver.org/); 0.x releases are previews.
 
+## [0.4.1] — 2026-10-21
+
+### Added
+- Tracker failover: the tracker in use first, then the others in torrent order (up to 4 per attempt); the working one is kept and logged.
+- HTTP redirects followed (up to 2); relative locations stay on the same host, HTTPS→HTTP is refused.
+- Sortable columns with an arrow on the header; sort order and column widths saved in `ui.json`.
+- Tracker column showing the host in use.
+- Right-click menu on the list: Start/Pause (all), Remove, Copy name, Copy infohash. Del removes after confirmation, Ctrl+A selects all.
+- `sign.cmd` for local Authenticode signing of the executable and installer.
+- Tests for redirects (with query, loop rejected) and failover from a failing tracker.
+
+### Changed
+- Remove asks for confirmation (button, menu and Del key).
+
 ## [0.4.0] — 2026-10-21
 
 ### Added
 - UDP tracker support (BEP 15): connect/announce over Winsock, bounded retries, IPv4/IPv6 hosts.
-- Tracker failover: the tracker in use first, then the others in torrent order (up to 4 per attempt); the working one is kept and logged.
-- HTTP redirects followed (up to 2); relative locations stay on the same host, HTTPS→HTTP is refused.
 - rTorrent 0.9.6 profile supported by the engine, marked experimental (binary peer_id, upper-case encoding, persistent peer_id/key).
-- Sortable columns with an arrow on the header; sort order and column widths saved in `ui.json`.
-- Tracker column showing the host in use.
-- Right-click menu on the list: Start/Pause (all), Remove, Copy name, Copy infohash. Del removes after confirmation, Ctrl+A selects all.
 - Setting to choose whether X hides to the tray or quits.
 - Version number in the header, window title and Help tab.
 - Tooltips on every command; Start/Pause read "Start all"/"Pause all" when nothing is selected.
-- `sign.cmd` for local Authenticode signing of the executable and installer.
 - CI builds installer, portable and source archives plus `SHA256SUMS.txt`.
-- Conformance tests against the local tracker: rTorrent requests, UDP announces, redirects, failover.
+- Conformance tests against the local tracker: rTorrent requests and UDP announces.
 
 ### Changed
 - Interface refresh: navy header in the Flow logo colours, flat command icons in the logo gradient, compact buttons grouped Add | Start · Pause · Remove | Settings · Tray.
@@ -37,5 +45,6 @@ All notable changes to TorrentDesk. Versions follow [Semantic Versioning](https:
 - English and Italian UI switchable without restart, saved in `ui.json`.
 - Bilingual per-user installer and portable package.
 
-[0.4.0]: https://github.com/Kyo89-sudo/TorrentDesk/compare/v0.3.0...main
+[0.4.1]: https://github.com/Kyo89-sudo/TorrentDesk/compare/v0.4.0...main
+[0.4.0]: https://github.com/Kyo89-sudo/TorrentDesk/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Kyo89-sudo/TorrentDesk/releases/tag/v0.3.0
