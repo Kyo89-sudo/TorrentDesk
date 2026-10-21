@@ -990,7 +990,7 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
                 RECT r;
                 GetClientRect(w, &r);
                 int y = (short)HIWORD(b);
-                int keep = std::max(px(200), (r.bottom - px(108)) * 2 / 5);
+                int keep = std::max(px(200), (int)(r.bottom - px(108)) * 2 / 5);
                 int maxBottom = MulDiv(r.bottom - px(108) - keep, 96, (int)dpi);
                 panelHeight = std::clamp(MulDiv(r.bottom - y, 96, (int)dpi), 150,
                                          std::max(150, maxBottom));
