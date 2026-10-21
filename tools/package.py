@@ -23,7 +23,7 @@ def main():
         z.writestr("TorrentDesk/portable.flag", "")
     source = DIST / f"TorrentDesk-{VERSION}-source.zip"
     with ZipFile(source, "w", ZIP_DEFLATED) as z:
-        for name in ("CMakeLists.txt", "build.cmd", "installer.iss", "app.rc", "README.md",
+        for name in ("CMakeLists.txt", "build.cmd", "sign.cmd", "installer.iss", "app.rc", "README.md",
                      "CONTRIBUTING.md", "AUDIT.md", "README.it.md", "LANGUAGES.md", "LICENSE", "NOTICE", ".gitignore", ".clang-format"):
             z.write(ROOT / name, "TorrentDesk/" + name)
         for directory in ("src", "assets", "profiles", "tools", "vendor", ".github", "languages", "docs"):
