@@ -190,7 +190,8 @@ void layout() {
     // The bottom area is resizable with the splitter between list and tabs; Help needs 260.
     int bottom = std::max(panelHeight, TabCtrl_GetCurSel(tabs) == 3 ? 260 : 150);
     int top = px(108);
-    int tabY = std::max(top + px(150), height - px(bottom));
+    // The list always keeps at least 40% of the space (and 200 px) below the buttons.
+    int tabY = std::max(top + std::max(px(200), (height - top) * 2 / 5), height - px(bottom));
     int area = std::max(px(77), height - tabY - px(73));
     MoveWindow(table, px(16), top, width - px(32), std::max(px(140), tabY - top - px(10)), TRUE);
     MoveWindow(tabs, px(16), tabY, width - px(32), px(28), TRUE);
@@ -989,7 +990,8 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
                 RECT r;
                 GetClientRect(w, &r);
                 int y = (short)HIWORD(b);
-                int maxBottom = MulDiv(r.bottom - px(108 + 150), 96, (int)dpi);
+                int keep = std::max(px(200), (r.bottom - px(108)) * 2 / 5);
+                int maxBottom = MulDiv(r.bottom - px(108) - keep, 96, (int)dpi);
                 panelHeight = std::clamp(MulDiv(r.bottom - y, 96, (int)dpi), 150,
                                          std::max(150, maxBottom));
                 layout();
