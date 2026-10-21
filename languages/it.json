@@ -166,6 +166,12 @@
     "Aggiungi o trascina file .torrent per iniziare.\r\nSeleziona una riga per i dettagli. Avvia e Pausa agiscono su tutti se non ci sono righe selezionate.\r\nUpload e velocità sono simulati; gli annunci ai tracker sono reali.\r\nAl riavvio i torrent vengono ripristinati in pausa.": "Aggiungi o trascina file .torrent per iniziare.\r\nSeleziona una riga per i dettagli. Avvia e Pausa agiscono su tutti se non ci sono righe selezionate.\r\nUpload e velocità sono simulati; gli annunci ai tracker sono reali.\r\nAl riavvio i torrent vengono ripristinati in pausa.",
     "Profilo consultabile ma non ancora supportato dal motore. Scegliere qBittorrent, Deluge o Transmission.": "Profilo consultabile ma non ancora supportato dal motore. Scegliere qBittorrent, Deluge o Transmission.",
     "Mettere tutti i torrent in pausa prima di cambiare impostazioni.": "Mettere tutti i torrent in pausa prima di cambiare impostazioni.",
-    "Questa cartella dati è già aperta in un'altra istanza.": "Questa cartella dati è già aperta in un'altra istanza."
+    "Questa cartella dati è già aperta in un'altra istanza.": "Questa cartella dati è già aperta in un'altra istanza.",
+    "Aggiungi file .torrent (puoi anche trascinarli nella finestra)": "Aggiungi file .torrent (puoi anche trascinarli nella finestra)",
+    "Avvia i torrent selezionati, o tutti se nessuno è selezionato": "Avvia i torrent selezionati, o tutti se nessuno è selezionato",
+    "Metti in pausa i torrent selezionati, o tutti se nessuno è selezionato": "Metti in pausa i torrent selezionati, o tutti se nessuno è selezionato",
+    "Rimuovi i torrent selezionati": "Rimuovi i torrent selezionati",
+    "Range di upload, sessioni simultanee, ratio, porta e profilo client": "Range di upload, sessioni simultanee, ratio, porta e profilo client",
+    "Nascondi nell'area di notifica; i torrent continuano": "Nascondi nell'area di notifica; i torrent continuano"
   }
 }

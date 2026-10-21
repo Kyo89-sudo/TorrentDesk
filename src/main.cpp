@@ -6,6 +6,7 @@
 #include <uxtheme.h>
 #include "engine.hpp"
 #include "i18n.hpp"
+#include "version.hpp"
 I18n locale;
 std::wstring tr(const std::wstring &s) { return locale.get(s); }
 int localizedMessage(HWND w, LPCWSTR body, LPCWSTR title, UINT type) {
@@ -70,7 +71,7 @@ void setFonts() {
         DeleteObject(smallFont);
     uiFont = CreateFont(-px(14), 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0,
                         CLEARTYPE_QUALITY, 0, L"Segoe UI");
-    titleFont = CreateFont(-px(22), 0, 0, 0, FW_SEMIBOLD, 0, 0, 0, DEFAULT_CHARSET, 0, 0,
+    titleFont = CreateFont(-px(19), 0, 0, 0, FW_SEMIBOLD, 0, 0, 0, DEFAULT_CHARSET, 0, 0,
                            CLEARTYPE_QUALITY, 0, L"Segoe UI");
     smallFont = CreateFont(-px(12), 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0,
                            CLEARTYPE_QUALITY, 0, L"Segoe UI");
@@ -99,25 +100,98 @@ std::vector<std::string> selected() {
             ids.push_back(visibleIds[i]);
     return ids;
 }
+// Untranslated label of command button i (ids 100..105). Start/Pause read
+// "… all" when nothing is selected, because they then act on every torrent.
+const wchar_t *commandLabel(int i, bool all) {
+    static const wchar_t *labels[] = {L"Aggiungi…", L"Avvia",        L"Pausa",
+                                      L"Rimuovi",   L"Impostazioni", L"Tray"};
+    if (all && i == 1)
+        return L"Avvia tutti";
+    if (all && i == 2)
+        return L"Pausa tutti";
+    return labels[i];
+}
+const wchar_t *commandTip(int i) {
+    static const wchar_t *tips[] = {
+        L"Aggiungi file .torrent (puoi anche trascinarli nella finestra)",
+        L"Avvia i torrent selezionati, o tutti se nessuno è selezionato",
+        L"Metti in pausa i torrent selezionati, o tutti se nessuno è selezionato",
+        L"Rimuovi i torrent selezionati",
+        L"Range di upload, sessioni simultanee, ratio, porta e profilo client",
+        L"Nascondi nell'area di notifica; i torrent continuano"};
+    return tips[i];
+}
+HWND tooltip = nullptr;
+std::wstring tipBuffer;
+void createTooltips(HWND w) {
+    tooltip = CreateWindowEx(WS_EX_TOPMOST, TOOLTIPS_CLASS, nullptr, WS_POPUP | TTS_ALWAYSTIP,
+                             CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, w,
+                             nullptr, appInstance, nullptr);
+    if (!tooltip)
+        return;
+    for (int i = 0; i < 6; ++i) {
+        TOOLINFO ti = {sizeof(ti)};
+        ti.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
+        ti.hwnd = w;
+        ti.uId = (UINT_PTR)GetDlgItem(w, 100 + i);
+        ti.lpszText = LPSTR_TEXTCALLBACK;
+        SendMessage(tooltip, TTM_ADDTOOL, 0, (LPARAM)&ti);
+    }
+    SendMessage(tooltip, TTM_SETMAXTIPWIDTH, 0, 420);
+}
+void updateCommands() {
+    if (!mainWindow || closing)
+        return;
+    bool none = ListView_GetSelectedCount(table) == 0;
+    bool any = !current.rows.empty();
+    for (int i = 0; i < 6; ++i)
+        replaceText(GetDlgItem(mainWindow, 100 + i), tr(commandLabel(i, none)));
+    EnableWindow(GetDlgItem(mainWindow, 101), any);
+    EnableWindow(GetDlgItem(mainWindow, 102), any);
+    EnableWindow(GetDlgItem(mainWindow, 103), !none);
+}
 void layout() {
     RECT r;
     GetClientRect(mainWindow, &r);
     int width = r.right, height = r.bottom;
-    int top = px(114), tabY = height - px(TabCtrl_GetCurSel(tabs) == 3 ? 260 : 185);
+    int top = px(104), tabY = height - px(TabCtrl_GetCurSel(tabs) == 3 ? 260 : 185);
     MoveWindow(table, px(16), top, width - px(32), std::max(px(140), tabY - top - px(10)), TRUE);
     MoveWindow(tabs, px(16), tabY, width - px(32), px(28), TRUE);
     MoveWindow(panel, px(18), tabY + px(34), width - px(36), px(112), TRUE);
     MoveWindow(helpPane, px(18), tabY + px(34), width - px(36), px(187), TRUE);
-    MoveWindow(languageCombo, width - px(164), px(24), px(148), px(250), TRUE);
+    MoveWindow(languageCombo, width - px(164), px(16), px(148), px(250), TRUE);
     MoveWindow(statusbar, 0, height - px(27), width, px(27), TRUE);
     int parts[] = {px(235), px(485), px(740), -1};
     SendMessage(statusbar, SB_SETPARTS, 4, (LPARAM)parts);
-    int x = 16;
-    int widths[] = {130, 100, 100, 115, 140, 100};
-    for (int i = 0; i < 6; ++i) {
-        MoveWindow(GetDlgItem(mainWindow, 100 + i), px(x), px(68), px(widths[i]), px(32), TRUE);
-        x += widths[i] + 8;
+    // Command buttons sized to their (translated) labels, in three groups:
+    // [Add]   [Start][Pause][Remove]          ...          [Settings][Tray]
+    int widths[6];
+    {
+        auto dc = GetDC(mainWindow);
+        auto old = SelectObject(dc, uiFont);
+        for (int i = 0; i < 6; ++i) {
+            int w = 0;
+            for (int v = 0; v < 2; ++v) {
+                auto s = tr(commandLabel(i, v == 1));
+                SIZE sz = {};
+                GetTextExtentPoint32(dc, s.c_str(), (int)s.size(), &sz);
+                w = std::max(w, (int)sz.cx);
+            }
+            widths[i] = std::max(px(88), w + px(16 + 8 + 22));
+        }
+        SelectObject(dc, old);
+        ReleaseDC(mainWindow, dc);
     }
+    int gap = px(6), group = px(18), y = px(62), h = px(30);
+    int x = px(16);
+    for (int i = 0; i < 4; ++i) {
+        MoveWindow(GetDlgItem(mainWindow, 100 + i), x, y, widths[i], h, TRUE);
+        x += widths[i] + (i == 0 ? group : gap);
+    }
+    int right = width - px(16);
+    int left = std::max(x + group, right - widths[4] - gap - widths[5]);
+    MoveWindow(GetDlgItem(mainWindow, 104), left, y, widths[4], h, TRUE);
+    MoveWindow(GetDlgItem(mainWindow, 105), left + widths[4] + gap, y, widths[5], h, TRUE);
     int fixed = px(125 + 90 + 95 + 95 + 65 + 80 + 75);
     ListView_SetColumnWidth(table, 0, std::max(px(170), width - px(50) - fixed));
     InvalidateRect(mainWindow, nullptr, FALSE);
@@ -126,9 +200,18 @@ void paintHeader(HDC dc) {
     RECT r;
     GetClientRect(mainWindow, &r);
     FillRect(dc, &r, backgroundBrush);
-    DrawIconEx(dc, px(17), px(19), appIcon, px(28), px(28), 0, nullptr, DI_NORMAL);
-    text(dc, L"TorrentDesk", {px(56), px(14), px(320), px(51)}, titleFont, ink);
-    text(dc, L"Simulazione upload", {r.right - px(430), px(17), r.right - px(185), px(49)},
+    DrawIconEx(dc, px(16), px(18), appIcon, px(24), px(24), 0, nullptr, DI_NORMAL);
+    text(dc, L"TorrentDesk", {px(48), px(12), px(320), px(48)}, titleFont, ink);
+    {
+        auto old = SelectObject(dc, titleFont);
+        SIZE sz = {};
+        GetTextExtentPoint32(dc, L"TorrentDesk", 11, &sz);
+        SelectObject(dc, old);
+        int vx = px(48) + sz.cx + px(8);
+        text(dc, std::wstring(L"v") + TORRENTDESK_VERSION, {vx, px(17), vx + px(120), px(46)},
+             smallFont, muted);
+    }
+    text(dc, L"Simulazione upload", {r.right - px(430), px(14), r.right - px(180), px(46)},
          smallFont, muted, DT_RIGHT | DT_SINGLELINE | DT_VCENTER);
 }
 std::wstring describe(const TorrentRow &r) {
@@ -258,6 +341,7 @@ void refresh(bool sample = false) {
         totals[0] = tr(L"Chiusura delle sessioni…");
     for (int i = 0; i < 4; ++i)
         SendMessage(statusbar, SB_SETTEXT, i, (LPARAM)totals[i].c_str());
+    updateCommands();
     RECT top = {0, 0, 30000, px(60)};
     InvalidateRect(mainWindow, &top, FALSE);
 }
@@ -476,14 +560,14 @@ void setArtwork() {
     auto oldImages = std::move(commandImages);
     auto oldTab = tabImages;
     for (int i = 0; i < 6; ++i) {
-        auto images = ImageList_Create(px(20), px(20), ILC_COLOR32, 1, 0);
-        auto icon = (HICON)LoadImage(appInstance, MAKEINTRESOURCE(201 + i), IMAGE_ICON, px(20),
-                                     px(20), LR_SHARED);
+        auto images = ImageList_Create(px(16), px(16), ILC_COLOR32, 1, 0);
+        auto icon = (HICON)LoadImage(appInstance, MAKEINTRESOURCE(201 + i), IMAGE_ICON, px(16),
+                                     px(16), LR_SHARED);
         ImageList_AddIcon(images, icon);
         commandImages.push_back(images);
         BUTTON_IMAGELIST image = {};
         image.himl = images;
-        image.margin = {px(5), 0, px(5), 0};
+        image.margin = {px(4), 0, px(2), 0};
         image.uAlign = BUTTON_IMAGELIST_ALIGN_LEFT;
         SendMessage(GetDlgItem(mainWindow, 100 + i), BCM_SETIMAGELIST, 0, (LPARAM)&image);
     }
@@ -551,12 +635,7 @@ void beginExit() {
     refresh();
 }
 void applyLanguage() {
-    const wchar_t *labels[] = {L"Aggiungi…", L"Avvia",        L"Pausa",
-                               L"Rimuovi",   L"Impostazioni", L"Tray"};
-    for (int i = 0; i < 6; ++i) {
-        auto t = tr(labels[i]);
-        SetWindowText(GetDlgItem(mainWindow, 100 + i), t.c_str());
-    }
+    updateCommands();
     const wchar_t *columns[] = {L"Nome",   L"Stato", L"Dimensione",   L"Velocità",
                                 L"Upload", L"Ratio", L"Seed / Leech", L"Announce"};
     for (int i = 0; i < 8; ++i) {
@@ -593,7 +672,8 @@ LRESULT CALLBACK helpProc(HWND w, UINT m, WPARAM a, LPARAM b) {
         GetClientRect(w, &r);
         FillRect(dc, &r, backgroundBrush);
         DrawIconEx(dc, px(8), px(10), appLogoIcon, px(112), px(112), 0, nullptr, DI_NORMAL);
-        text(dc, L"TorrentDesk 0.3.0", {px(144), px(5), r.right, px(38)}, titleFont, ink);
+        text(dc, std::wstring(L"TorrentDesk ") + TORRENTDESK_VERSION, {px(144), px(5), r.right, px(38)},
+             titleFont, ink);
         auto info = tr(L"Applicazione didattica C++ / Win32 per Windows.") + L"\n" +
                     tr(L"Upload simulato e annunci HTTP/HTTPS. Nessun trasferimento P2P.") + L"\n" +
                     tr(L"Progetto indipendente ispirato a JOAL di Anthony Raymond.") + L"\n" +
@@ -641,11 +721,9 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
             mainWindow = w;
             dpi = GetDpiForWindow(w);
             setFonts();
-            const wchar_t *labels[] = {L"Aggiungi…", L"Avvia",        L"Pausa",
-                                       L"Rimuovi",   L"Impostazioni", L"Tray"};
             for (int i = 0; i < 6; ++i)
-                control(w, L"BUTTON", labels[i], WS_TABSTOP | BS_PUSHBUTTON, 0, 0, 100, 35,
-                        100 + i);
+                control(w, L"BUTTON", commandLabel(i, false), WS_TABSTOP | BS_PUSHBUTTON, 0, 0,
+                        100, 35, 100 + i);
             table =
                 CreateWindowEx(0, WC_LISTVIEW, L"Torrent",
                                WS_CHILD | WS_VISIBLE | WS_TABSTOP | LVS_REPORT | LVS_SHOWSELALWAYS,
@@ -704,6 +782,7 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
                     }
                 }
             setArtwork();
+            createTooltips(w);
             EnumChildWindows(
                 w,
                 [](HWND h, LPARAM) -> BOOL {
@@ -751,6 +830,15 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
         }
         case WM_NOTIFY: {
             auto h = (NMHDR *)b;
+            if (h->code == TTN_GETDISPINFO && h->hwndFrom == tooltip) {
+                auto info = (NMTTDISPINFO *)b;
+                int id = GetDlgCtrlID((HWND)h->idFrom);
+                if (id >= 100 && id <= 105) {
+                    tipBuffer = tr(commandTip(id - 100));
+                    info->lpszText = tipBuffer.data();
+                }
+                return 0;
+            }
             if (h->hwndFrom == tabs && h->code == TCN_SELCHANGE) {
                 layout();
                 refreshPanel();
@@ -758,6 +846,7 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
             }
             if (h->hwndFrom == table) {
                 if (h->code == LVN_ITEMCHANGED && !refreshLock) {
+                    updateCommands();
                     refreshPanel();
                     return 0;
                 }
@@ -789,7 +878,7 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
                             break;
                         }
                     uiResults["languageSwitch"] =
-                        locale.code() == "en" && readText(GetDlgItem(w, 101)) == L"Start";
+                        locale.code() == "en" && readText(GetDlgItem(w, 101)) == L"Start all";
                     uiResults["languageSaved"] =
                         fs::exists(dataDir / L"ui.json") &&
                         readJson(dataDir / L"ui.json").value("language", "") == "en";
@@ -1074,7 +1163,7 @@ int WINAPI wWinMain(HINSTANCE h, HINSTANCE, LPWSTR, int n) {
         hc.hCursor = wc.hCursor;
         hc.hbrBackground = backgroundBrush;
         RegisterClass(&hc);
-        HWND w = CreateWindowEx(0, wc.lpszClassName, L"TorrentDesk",
+        HWND w = CreateWindowEx(0, wc.lpszClassName, L"TorrentDesk " TORRENTDESK_VERSION,
                                 WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, CW_USEDEFAULT, CW_USEDEFAULT,
                                 1120, 740, nullptr, nullptr, h, nullptr);
         if (!w)

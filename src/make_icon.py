@@ -11,45 +11,47 @@ logo = Image.open(OUT / 'flow-logo.png').convert('RGBA')
 logo.save(OUT / 'torrentdesk.ico', sizes=SIZES)
 logo.resize((256,256), Image.Resampling.LANCZOS).save(OUT / 'torrentdesk.png')
 
-def gradient(top, bottom):
-    im = Image.new('RGBA',(256,256))
+# Command icons: flat line glyphs in the UI ink colour on a transparent
+# background, so they sit quietly on native push buttons.
+INK = (38, 56, 66, 255)
+W = 22  # stroke width at 256 px (~1.7 px at 20 px)
+def glyph(name):
+    im = Image.new('RGBA', (256, 256), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
-    for y in range(256):
-        t=y/255
-        d.line((0,y,256,y),fill=tuple(int(a+(b-a)*t) for a,b in zip(top,bottom))+(255,))
+    def line(*pts):
+        d.line(pts, fill=INK, width=W, joint='curve')
+        for x, y in (pts[0], pts[-1]):
+            d.ellipse((x - W/2, y - W/2, x + W/2, y + W/2), fill=INK)
+    if name == 'add':
+        line((128, 48), (128, 208)); line((48, 128), (208, 128))
+    elif name == 'start':
+        d.polygon([(76, 40), (212, 128), (76, 216)], fill=INK)
+    elif name == 'pause':
+        d.rectangle((66, 48, 106, 208), fill=INK); d.rectangle((150, 48, 190, 208), fill=INK)
+    elif name == 'remove':
+        line((44, 72), (212, 72)); line((100, 72), (108, 40), (148, 40), (156, 72))
+        line((68, 72), (80, 220), (176, 220), (188, 72))
+        line((108, 108), (110, 184)); line((148, 108), (146, 184))
+    elif name == 'settings':
+        pts = []
+        for i in range(48):
+            a = 2 * math.pi * (i + 0.5) / 48
+            r = 112 if (i // 3) % 2 == 0 else 86
+            pts.append((128 + math.cos(a) * r, 128 + math.sin(a) * r))
+        d.polygon(pts, fill=INK)
+        d.ellipse((92, 92, 164, 164), fill=(0, 0, 0, 0))
+    elif name == 'tray':
+        d.rounded_rectangle((36, 52, 220, 204), radius=18, outline=INK, width=W)
+        line((84, 160), (172, 160))
+    else:  # help
+        d.ellipse((24, 24, 232, 232), outline=INK, width=W)
+        d.arc((90, 62, 166, 138), 180, 90, fill=INK, width=W)
+        line((128, 138), (128, 156))
+        d.ellipse((115, 176, 141, 202), fill=INK)
     return im
 
-for name in ['add','start','pause','remove','settings','tray','help']:
-    tile=gradient((20,48,110),(5,17,43));rounding=Image.new('L',(256,256));ImageDraw.Draw(rounding).rounded_rectangle((4,4,252,252),radius=54,fill=255);tile.putalpha(rounding)
-    mask=Image.new('L',(256,256));d=ImageDraw.Draw(mask)
-    if name=='add':
-        d.rounded_rectangle((110,53,146,203),radius=12,fill=255)
-        d.rounded_rectangle((53,110,203,146),radius=12,fill=255)
-    elif name=='start':
-        d.polygon([(88,52),(205,128),(88,204)],fill=255)
-    elif name=='pause':
-        d.rounded_rectangle((69,58,108,198),radius=12,fill=255)
-        d.rounded_rectangle((148,58,187,198),radius=12,fill=255)
-    elif name=='remove':
-        d.rounded_rectangle((78,91,178,203),radius=17,fill=255)
-        d.rounded_rectangle((64,61,192,82),radius=10,fill=255)
-        d.rounded_rectangle((106,44,150,65),radius=10,fill=255)
-        d.rounded_rectangle((104,113,117,180),radius=6,fill=0)
-        d.rounded_rectangle((140,113,153,180),radius=6,fill=0)
-    elif name=='settings':
-        points=[]
-        for i in range(32):
-            a=2*math.pi*i/32;radius=83 if i%4 in (1,2) else 68
-            points.append((128+math.cos(a)*radius,128+math.sin(a)*radius))
-        d.polygon(points,fill=255);d.ellipse((93,93,163,163),fill=0)
-    elif name=='tray':
-        d.rounded_rectangle((112,46,144,145),radius=10,fill=255)
-        d.polygon([(73,116),(128,174),(183,116)],fill=255)
-        d.rounded_rectangle((56,188,200,210),radius=10,fill=255)
-    else:
-        d.ellipse((111,48,145,82),fill=255)
-        d.rounded_rectangle((112,102,144,204),radius=13,fill=255)
-    ink=gradient((91,241,255),(0,118,255));ink.putalpha(mask);tile.alpha_composite(ink)
-    tile.save(OUT / (name+'.ico'),sizes=SIZES)
-    tile.resize((64,64),Image.Resampling.LANCZOS).save(OUT/(name+'.png'))
-print('Flow application icon and 7 command icons ready')
+for name in ['add', 'start', 'pause', 'remove', 'settings', 'tray', 'help']:
+    tile = glyph(name)
+    tile.save(OUT / (name + '.ico'), sizes=SIZES)
+    tile.resize((64, 64), Image.Resampling.LANCZOS).save(OUT / (name + '.png'))
+print('Flow application icon and 7 flat command icons ready')

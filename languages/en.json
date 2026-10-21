@@ -166,6 +166,12 @@
     "Aggiungi o trascina file .torrent per iniziare.\r\nSeleziona una riga per i dettagli. Avvia e Pausa agiscono su tutti se non ci sono righe selezionate.\r\nUpload e velocità sono simulati; gli annunci ai tracker sono reali.\r\nAl riavvio i torrent vengono ripristinati in pausa.": "Add or drop .torrent files to begin.\r\nSelect a row for details. Start and Pause affect all torrents if no rows are selected.\r\nUpload and speed are simulated; tracker announces are real.\r\nTorrents are restored paused on restart.",
     "Profilo consultabile ma non ancora supportato dal motore. Scegliere qBittorrent, Deluge o Transmission.": "This profile can be viewed but is not supported by the engine yet. Choose qBittorrent, Deluge or Transmission.",
     "Mettere tutti i torrent in pausa prima di cambiare impostazioni.": "Pause all torrents before changing settings.",
-    "Questa cartella dati è già aperta in un'altra istanza.": "This data folder is already open in another instance."
+    "Questa cartella dati è già aperta in un'altra istanza.": "This data folder is already open in another instance.",
+    "Aggiungi file .torrent (puoi anche trascinarli nella finestra)": "Add .torrent files (you can also drop them on the window)",
+    "Avvia i torrent selezionati, o tutti se nessuno è selezionato": "Start the selected torrents, or all of them if none is selected",
+    "Metti in pausa i torrent selezionati, o tutti se nessuno è selezionato": "Pause the selected torrents, or all of them if none is selected",
+    "Rimuovi i torrent selezionati": "Remove the selected torrents",
+    "Range di upload, sessioni simultanee, ratio, porta e profilo client": "Upload range, simultaneous sessions, ratio, port and client profile",
+    "Nascondi nell'area di notifica; i torrent continuano": "Hide to the notification area; torrents keep running"
   }
 }
