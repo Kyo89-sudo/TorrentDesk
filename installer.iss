@@ -4,14 +4,14 @@
 [Setup]
 AppId={{7C30D651-BE07-48BF-AC56-28D599D6A2E5}
 AppName=TorrentDesk
-AppVersion=0.3.0
+AppVersion=0.4.0
 DefaultDirName={localappdata}\Programs\TorrentDesk
 DefaultGroupName=TorrentDesk
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 OutputDir=dist
-OutputBaseFilename=TorrentDesk-0.3.0-Setup-x64
+OutputBaseFilename=TorrentDesk-0.4.0-Setup-x64
 SetupIconFile=assets\torrentdesk.ico
 Compression=lzma2
 SolidCompression=yes

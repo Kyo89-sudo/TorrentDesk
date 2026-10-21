@@ -4,13 +4,14 @@
 
 Applicazione didattica **C++17 / Win32 per Windows x64**. Interfaccia italiana e inglese, nessun Java o Electron.
 
-**Versione 0.3.0: prototipo funzionante, compatibilità parziale.** Studia parsing bencode, infohash SHA-1, richieste announce HTTP/HTTPS, scheduling e GUI nativa. Upload e velocità sono **simulati**: non trasferisce il contenuto dei file ad altri peer. Gli annunci al tracker sono richieste reali.
+**Versione 0.4.0: prototipo funzionante, compatibilità parziale.** Studia parsing bencode, infohash SHA-1, richieste announce HTTP/HTTPS e UDP, scheduling e GUI nativa. Upload e velocità sono **simulati**: non trasferisce il contenuto dei file ad altri peer. Gli annunci al tracker sono richieste reali.
 
 ## Funzioni
 
 - Importazione multipla di `.torrent` v1 e ibridi, anche tramite drag-and-drop.
 - Nome, dimensione, velocità simulata, upload, ratio, seed/leecher e conto alla rovescia.
-- Avvia, pausa, rimuovi; i comandi Avvia/Pausa agiscono su tutti se non ci sono selezioni.
+- Avvia, pausa, rimuovi; senza selezione i pulsanti diventano Avvia tutti / Pausa tutti. Suggerimenti su ogni comando.
+- Tray e, se attiva in Impostazioni, la X nascondono la finestra nell'area di notifica.
 - Velocità minima/massima globali in KiB/s, limite sessioni, ratio obiettivo, porta dichiarata.
 - Annunci started / periodici / stopped, intervalli del tracker, retry con attesa crescente.
 - Salvataggio atomico di configurazione, elenco torrent e upload storico; ripristino in pausa.
@@ -73,14 +74,18 @@ Dati predefiniti: `%LOCALAPPDATA%\TorrentDesk`. `--data-dir PERCORSO` sceglie un
 ISCC installer.iss
 ```
 
-Con Inno Setup 6 genera `dist/TorrentDesk-0.3.0-Setup-x64.exe`. L'eseguibile non è firmato digitalmente.
+Con Inno Setup 6 genera `dist/TorrentDesk-0.4.0-Setup-x64.exe`. La CI produce installer, portable e SHA256SUMS come artifact. L'eseguibile non è firmato digitalmente.
 
 ## Struttura e licenze
 
-`src/torrent.hpp`: bencode e metadati; `src/engine.hpp`: protocollo e sessioni; `src/main.cpp`: GUI; `src/tests.cpp`: regressioni. `tools/`: tracker e dimostrazioni. La CI Windows compila e verifica i test.
+`src/torrent.hpp`: bencode e metadati; `src/engine.hpp`: protocollo e sessioni; `src/udp.hpp`: client tracker UDP (BEP 15); `src/main.cpp`: GUI; `src/tests.cpp`: regressioni. `tools/`: tracker e dimostrazioni. La CI Windows compila e verifica i test.
 
 Apache-2.0, vedere [LICENSE](LICENSE) e [NOTICE](NOTICE). Profili client e convenzioni peer/key derivati da lavoro di terzi Apache-2.0 (vedere NOTICE); `nlohmann/json` è MIT. Per contribuire, vedere [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Novita 0.3.0
+## Novità 0.4.0
+
+Tracker UDP (BEP 15). Profilo rTorrent 0.9.6 supportato (sperimentale); profili ridotti a 28 client recenti, predefinito qBittorrent 5.2.4. Intestazione blu nei colori del logo con numero di versione, icone piatte, pulsanti raggruppati con Avvia tutti/Pausa tutti e suggerimenti. Impostazione per scegliere se la X riduce nella tray o chiude il programma. Test di conformità con il tracker locale HTTP e UDP.
+
+## Novità 0.3.0
 
 Logo Flow e icone coordinate, pulsante Tray, X che nasconde nell'area di notifica, menu tray con Apri/Avvia tutti/Pausa tutti/Aiuto/Esci. Solo Esci chiude il programma. Tab Aiuto con logo, informazioni e documentazione locale. Italiano e inglese selezionabili senza riavvio, scelta salvata in ui.json. Installer bilingue. Altre lingue: vedere LANGUAGES.md.

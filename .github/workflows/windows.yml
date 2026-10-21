@@ -32,3 +32,20 @@ jobs:
         with:
           name: TorrentDesk-windows-x64
           path: dist/TorrentDesk/
+      - name: Installer, portable and checksums
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          Copy-Item build/Release/TorrentDesk.exe TorrentDesk.exe
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /Qp installer.iss
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python tools/package.py
+          Remove-Item dist/TorrentDesk -Recurse
+          Get-ChildItem dist -File | Where-Object Name -notlike "*-source.zip" | ForEach-Object {
+            "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name
+          } | Set-Content -Encoding ascii dist/SHA256SUMS.txt
+          Get-Content dist/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TorrentDesk-release
+          path: dist/
