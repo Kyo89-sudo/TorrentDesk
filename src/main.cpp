@@ -262,7 +262,7 @@ void refreshPanel() {
         replaceText(
             panel, tr(L"Profilo selezionato: ") + wide(c.client) + L"\r\n" +
                        std::to_wstring(profileFiles.size()) +
-                       tr(L" profili client disponibili (qBittorrent, Deluge, Transmission)."
+                       tr(L" profili client disponibili (qBittorrent, Deluge, Transmission, rTorrent)."
                           L"\r\nImpostazioni: minimo ") +
                        std::to_wstring(c.minimum) + tr(L" KiB/s · massimo ") +
                        std::to_wstring(c.maximum) + L" KiB/s · " + std::to_wstring(c.simultaneous) +

@@ -60,7 +60,9 @@ inline bool supportedProfile(const json &p) {
         if (type == "RANDOM_POOL_WITH_CHECKSUM")
             return key.at("type") == "DIGIT_RANGE_TRANSFORMED_TO_HEX_WITHOUT_LEADING_ZEROES";
         auto pat = peer.at("pattern").get<std::string>();
-        return type == "REGEX" && (pat.rfind("-qB", 0) == 0 || pat.rfind("-DE", 0) == 0) &&
+        return type == "REGEX" &&
+               (pat.rfind("-qB", 0) == 0 || pat.rfind("-DE", 0) == 0 ||
+                pat.rfind("-lt", 0) == 0) &&
                pat.find("{12}") != std::string::npos &&
                (key.at("type") == "HASH" || key.at("type") == "HASH_NO_LEADING_ZERO");
     } catch (...) {
@@ -89,6 +91,15 @@ inline std::string peerId(const json &p) {
         if (bracket == std::string::npos)
             throw std::runtime_error("Profilo peer_id non supportato.");
         out = pattern.substr(0, bracket);
+        // rTorrent-style "[\x01-\xff]{12}": arbitrary non-zero bytes (sent URL-encoded).
+        // The JSON stores the range as UTF-8, so it is matched textually, not with std::regex.
+        if (pattern.compare(bracket, 6, "[\x01-\xc3\xbf]") == 0) {
+            while (out.size() < 20)
+                out += (char)(1 + random32() % 255);
+            if (out.size() != 20)
+                throw std::runtime_error("peer_id deve contenere 20 byte.");
+            return out;
+        }
         const std::string chars =
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_~()!.*-";
         while (out.size() < 20)
@@ -466,8 +477,11 @@ class DeskEngine {
                     {
                         std::lock_guard<std::mutex> cacheLock(mu);
                         auto cacheId = task.profileName + ":" + hex(task.meta.hash);
-                        if (task.profile.at("peerIdGenerator").at("refreshOn") == "NEVER") {
-                            auto &peer = peerCache[task.profileName];
+                        auto refresh =
+                            task.profile.at("peerIdGenerator").at("refreshOn").get<std::string>();
+                        if (refresh == "NEVER" || refresh == "TORRENT_PERSISTENT") {
+                            auto &peer =
+                                peerCache[refresh == "NEVER" ? task.profileName : cacheId];
                             if (peer.empty())
                                 peer = peerId(task.profile);
                             task.peer = peer;

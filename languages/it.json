@@ -160,7 +160,7 @@
     "   ·   Ultimo annuncio riuscito: ": "   ·   Ultimo annuncio riuscito: ",
     " KiB/s · massimo ": " KiB/s · massimo ",
     " sessioni · porta dichiarata ": " sessioni · porta dichiarata ",
-    " profili client disponibili (qBittorrent, Deluge, Transmission).\r\nImpostazioni: minimo ": " profili client disponibili (qBittorrent, Deluge, Transmission).\r\nImpostazioni: minimo ",
+    " profili client disponibili (qBittorrent, Deluge, Transmission, rTorrent).\r\nImpostazioni: minimo ": " profili client disponibili (qBittorrent, Deluge, Transmission, rTorrent).\r\nImpostazioni: minimo ",
     ".\r\n¹ Upload annunciato: valore cumulativo inviato nell'ultimo announce riuscito di ciascuna sessione.\r\nI contatori non indicano file realmente caricati su altri peer.": ".\r\n¹ Upload annunciato: valore cumulativo inviato nell'ultimo announce riuscito di ciascuna sessione.\r\nI contatori non indicano file realmente caricati su altri peer.",
     "Aggiungi o trascina file .torrent per iniziare.\r\nSeleziona una riga per i dettagli. Avvia e Pausa agiscono su tutti se non ci sono righe selezionate.\r\nUpload e velocità sono simulati; gli annunci ai tracker sono reali.\r\nAl riavvio i torrent vengono ripristinati in pausa.": "Aggiungi o trascina file .torrent per iniziare.\r\nSeleziona una riga per i dettagli. Avvia e Pausa agiscono su tutti se non ci sono righe selezionate.\r\nUpload e velocità sono simulati; gli annunci ai tracker sono reali.\r\nAl riavvio i torrent vengono ripristinati in pausa.",
     "Profilo consultabile ma non ancora supportato dal motore. Scegliere qBittorrent, Deluge o Transmission.": "Profilo consultabile ma non ancora supportato dal motore. Scegliere qBittorrent, Deluge o Transmission.",
