@@ -1,4 +1,5 @@
 <p align="center"><img src="assets/flow-logo.png" alt="TorrentDesk logo" width="160"></p>
+<p align="center"><a href="https://github.com/Kyo89-sudo/TorrentDesk/actions/workflows/windows.yml"><img src="https://github.com/Kyo89-sudo/TorrentDesk/actions/workflows/windows.yml/badge.svg" alt="Windows build"></a> <a href="https://github.com/Kyo89-sudo/TorrentDesk/releases"><img src="https://img.shields.io/github/v/release/Kyo89-sudo/TorrentDesk?include_prereleases&label=release" alt="Release"></a> <img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License"></p>
 
 # TorrentDesk
 
