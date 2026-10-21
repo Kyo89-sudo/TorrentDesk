@@ -1,32 +1,6 @@
-<p align="center">
-  <img src="assets/flow-logo.png" width="144" alt="TorrentDesk Flow logo">
-</p>
-<h1 align="center">TorrentDesk</h1>
-<p align="center"><strong>A native Windows app for exploring torrent announces.</strong></p>
-<p align="center">Windows x64 · C++17 / Win32 · English &amp; Italian · Apache-2.0</p>
-<p align="center">
-  <a href="#download">Download</a> ·
-  <a href="#desktop-features">Features</a> ·
-  <a href="#build">Build</a> ·
-  <a href="README.it.md">Italiano</a> ·
-  <a href="LANGUAGES.md">Translations</a>
-</p>
+# TorrentDesk
 
----
-
-## Download
-
-**0.3.0 Preview** — a working educational prototype with partial protocol support.
-
-| Package | For |
-| --- | --- |
-| [Windows installer](https://github.com/Kyo89-sudo/TorrentDesk/releases/download/v0.3.0/TorrentDesk-0.3.0-Setup-x64.exe) | Per-user setup and uninstaller |
-| [Portable ZIP](https://github.com/Kyo89-sudo/TorrentDesk/releases/download/v0.3.0/TorrentDesk-0.3.0-portable-x64.zip) | Extract and run, no installation |
-| [Source archive](https://github.com/Kyo89-sudo/TorrentDesk/releases/download/v0.3.0/TorrentDesk-0.3.0-source.zip) | Build, study and modify |
-| [SHA-256 checksums](https://github.com/Kyo89-sudo/TorrentDesk/releases/download/v0.3.0/TorrentDesk-0.3.0-SHA256.txt) | Verify downloaded packages |
-
-[Release notes](https://github.com/Kyo89-sudo/TorrentDesk/releases/tag/v0.3.0) · Windows x64 · No Java or Electron required
-
+[Italiano](README.it.md) · [Translations](LANGUAGES.md)
 
 **Educational Windows x64 application, written in C++17 with a native Win32 UI.** Inspired by [JOAL](https://github.com/anthonyraymond/joal); no Java or Electron runtime.
 

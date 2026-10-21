@@ -1,0 +1,8 @@
+Tool: built-in imagegen (edit mode).
+Input: selected Flow concept for TorrentDesk.
+Project output: assets/flow-logo.png; multi-size ICO: assets/torrentdesk.ico.
+
+Final prompt:
+Edit target: the provided TorrentDesk Flow icon. Preserve the exact chosen design: dark midnight navy rounded-square tile and the blue/cyan flowing ribbon, its colors, curves, shading, proportions and placement within the tile. Change ONLY the exterior off-white background: remove it completely to genuine alpha transparency. Tightly frame the rounded-square tile so it fills approximately 96% of a square canvas with only a tiny uniform transparent padding, maintaining transparent rounded exterior corners. Do not change or reinterpret the wave, do not add text, no shadow outside tile, no extra shapes. This is the final production application icon, not a presentation mockup.
+
+Command icons are drawn procedurally by src/make_icon.py in the matching navy/blue/cyan palette.

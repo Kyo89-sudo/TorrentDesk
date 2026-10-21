@@ -1,10 +1,4 @@
-<p align="center"><img src="assets/flow-logo.png" width="144" alt="Logo Flow di TorrentDesk"></p>
-<h1 align="center">TorrentDesk</h1>
-<p align="center"><strong>Un'app Windows nativa per esplorare gli annunci torrent.</strong></p>
-<p align="center">Windows x64 · C++17 / Win32 · Italiano e inglese · Apache-2.0</p>
-<p align="center"><a href="https://github.com/Kyo89-sudo/TorrentDesk/releases/tag/v0.3.0">Scarica 0.3.0 Preview</a> · <a href="README.md">English</a></p>
-
----
+# TorrentDesk
 
 Applicazione didattica **C++17 / Win32 per Windows x64**, ispirata a [JOAL](https://github.com/anthonyraymond/joal). Interfaccia italiana e inglese, nessun Java o Electron.
 

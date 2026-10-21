@@ -1,0 +1,34 @@
+name: Windows build and tests
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S . -B build -A x64
+      - name: Build
+        run: cmake --build build --config Release
+      - name: Core tests
+        run: ctest --test-dir build -C Release --output-on-failure
+      - name: Local tracker integration
+        run: python tools/run_integration.py build/Release/TorrentDeskTests.exe .
+      - name: Package executable
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist/TorrentDesk | Out-Null
+          Copy-Item build/Release/TorrentDesk.exe dist/TorrentDesk/
+          Copy-Item profiles,languages,docs dist/TorrentDesk/ -Recurse
+          New-Item -ItemType Directory -Force dist/TorrentDesk/assets | Out-Null
+          Copy-Item assets/flow-logo.png dist/TorrentDesk/assets/
+          Copy-Item README.md,LICENSE,NOTICE dist/TorrentDesk/
+          Copy-Item vendor/LICENSE.MIT dist/TorrentDesk/LICENSE-json.txt
+          New-Item -ItemType File dist/TorrentDesk/portable.flag | Out-Null
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TorrentDesk-windows-x64
+          path: dist/TorrentDesk/
