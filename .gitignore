@@ -1,0 +1,13 @@
+/build/
+/dist/
+/data/
+/test-data*/
+*.exe
+*.obj
+*.res
+*.pdb
+*.ilk
+*.zip
+portable.flag
+__pycache__/
+/work/

@@ -1,0 +1,34 @@
+#include <windows.h>
+101 ICON "assets/torrentdesk.ico"
+1 RT_MANIFEST "assets/app.manifest"
+1 VERSIONINFO
+FILEVERSION 0,3,0,0
+PRODUCTVERSION 0,3,0,0
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+BEGIN
+ BLOCK "StringFileInfo"
+ BEGIN
+  BLOCK "041004b0"
+  BEGIN
+   VALUE "FileDescription", "TorrentDesk - Educational torrent announce tool"
+   VALUE "FileVersion", "0.3.0"
+   VALUE "ProductName", "TorrentDesk"
+   VALUE "ProductVersion", "0.3.0"
+   VALUE "OriginalFilename", "TorrentDesk.exe"
+  END
+ END
+ BLOCK "VarFileInfo"
+ BEGIN
+  VALUE "Translation", 0x0410, 1200
+ END
+END
+
+301 RCDATA "languages/en.json"
+201 ICON "assets/add.ico"
+202 ICON "assets/start.ico"
+203 ICON "assets/pause.ico"
+204 ICON "assets/remove.ico"
+205 ICON "assets/settings.ico"
+206 ICON "assets/tray.ico"
+207 ICON "assets/help.ico"

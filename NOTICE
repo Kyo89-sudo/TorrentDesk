@@ -1,0 +1,15 @@
+TorrentDesk
+Educational native Windows port inspired by JOAL.
+
+Upstream: https://github.com/anthonyraymond/joal
+Snapshot: 4f7e40d84859ef00181b5a23a5c7d5b34fa7bac3
+The client profiles in profiles/ are copied without modification from upstream.
+Configuration conventions and peer/key algorithms are ported from JOAL.
+JOAL and its contributors retain their original rights under Apache-2.0.
+TorrentDesk is an independent project and is not an official JOAL release.
+Changes: native C++/Win32 UI, torrent parser, WinHTTP transport, scheduler,
+persistence, tests, Windows packaging and original application artwork.
+
+nlohmann/json 3.12.0, MIT license: vendor/LICENSE.MIT.
+
+Flow logo: imagegen-created artwork selected for TorrentDesk. Command icons are original procedural artwork; see src/make_icon.py.
