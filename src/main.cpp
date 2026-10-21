@@ -154,12 +154,12 @@ void layout() {
     RECT r;
     GetClientRect(mainWindow, &r);
     int width = r.right, height = r.bottom;
-    int top = px(104), tabY = height - px(TabCtrl_GetCurSel(tabs) == 3 ? 260 : 185);
+    int top = px(108), tabY = height - px(TabCtrl_GetCurSel(tabs) == 3 ? 260 : 185);
     MoveWindow(table, px(16), top, width - px(32), std::max(px(140), tabY - top - px(10)), TRUE);
     MoveWindow(tabs, px(16), tabY, width - px(32), px(28), TRUE);
     MoveWindow(panel, px(18), tabY + px(34), width - px(36), px(112), TRUE);
     MoveWindow(helpPane, px(18), tabY + px(34), width - px(36), px(187), TRUE);
-    MoveWindow(languageCombo, width - px(164), px(16), px(148), px(250), TRUE);
+    MoveWindow(languageCombo, width - px(164), px(13), px(148), px(250), TRUE);
     MoveWindow(statusbar, 0, height - px(27), width, px(27), TRUE);
     int parts[] = {px(235), px(485), px(740), -1};
     SendMessage(statusbar, SB_SETPARTS, 4, (LPARAM)parts);
@@ -182,7 +182,7 @@ void layout() {
         SelectObject(dc, old);
         ReleaseDC(mainWindow, dc);
     }
-    int gap = px(6), group = px(18), y = px(62), h = px(30);
+    int gap = px(6), group = px(18), y = px(66), h = px(30);
     int x = px(16);
     for (int i = 0; i < 4; ++i) {
         MoveWindow(GetDlgItem(mainWindow, 100 + i), x, y, widths[i], h, TRUE);
@@ -196,23 +196,36 @@ void layout() {
     ListView_SetColumnWidth(table, 0, std::max(px(170), width - px(50) - fixed));
     InvalidateRect(mainWindow, nullptr, FALSE);
 }
+// Header band in the Flow logo palette: navy bar, blue->cyan accent line.
+const COLORREF navy = RGB(10, 27, 66), navyText = RGB(150, 190, 235);
 void paintHeader(HDC dc) {
     RECT r;
     GetClientRect(mainWindow, &r);
     FillRect(dc, &r, backgroundBrush);
-    DrawIconEx(dc, px(16), px(18), appIcon, px(24), px(24), 0, nullptr, DI_NORMAL);
-    text(dc, L"TorrentDesk", {px(48), px(12), px(320), px(48)}, titleFont, ink);
+    RECT band = {0, 0, r.right, px(52)};
+    auto navyBrush = CreateSolidBrush(navy);
+    FillRect(dc, &band, navyBrush);
+    DeleteObject(navyBrush);
+    for (int x = 0; x < r.right; x += 4) {
+        double t = r.right ? (double)x / r.right : 0;
+        auto line = CreateSolidBrush(RGB(0, (int)(96 + 120 * t), (int)(240 - 10 * t)));
+        RECT seg = {x, px(52), std::min(x + 4, (int)r.right), px(52) + std::max(2, px(2))};
+        FillRect(dc, &seg, line);
+        DeleteObject(line);
+    }
+    DrawIconEx(dc, px(16), px(14), appIcon, px(24), px(24), 0, nullptr, DI_NORMAL);
+    text(dc, L"TorrentDesk", {px(48), px(8), px(320), px(44)}, titleFont, RGB(255, 255, 255));
     {
         auto old = SelectObject(dc, titleFont);
         SIZE sz = {};
         GetTextExtentPoint32(dc, L"TorrentDesk", 11, &sz);
         SelectObject(dc, old);
         int vx = px(48) + sz.cx + px(8);
-        text(dc, std::wstring(L"v") + TORRENTDESK_VERSION, {vx, px(17), vx + px(120), px(46)},
-             smallFont, muted);
+        text(dc, std::wstring(L"v") + TORRENTDESK_VERSION, {vx, px(13), vx + px(120), px(42)},
+             smallFont, navyText);
     }
-    text(dc, L"Simulazione upload", {r.right - px(430), px(14), r.right - px(180), px(46)},
-         smallFont, muted, DT_RIGHT | DT_SINGLELINE | DT_VCENTER);
+    text(dc, L"Simulazione upload", {r.right - px(430), px(10), r.right - px(180), px(42)},
+         smallFont, navyText, DT_RIGHT | DT_SINGLELINE | DT_VCENTER);
 }
 std::wstring describe(const TorrentRow &r) {
     std::wstring out = tr(L"Nome: ") + wide(r.meta.name) + tr(L"\r\nDimensione: ") +
@@ -249,9 +262,8 @@ void refreshPanel() {
         replaceText(
             panel, tr(L"Profilo selezionato: ") + wide(c.client) + L"\r\n" +
                        std::to_wstring(profileFiles.size()) +
-                       tr(L" profili upstream disponibili. Motore: qBittorrent, Deluge e "
-                          L"Transmission.\r\nI profili sono ereditati da JOAL e non sono "
-                          L"certificati per versioni/OS attuali.\r\nImpostazioni: minimo ") +
+                       tr(L" profili client disponibili (qBittorrent, Deluge, Transmission)."
+                          L"\r\nImpostazioni: minimo ") +
                        std::to_wstring(c.minimum) + tr(L" KiB/s · massimo ") +
                        std::to_wstring(c.maximum) + L" KiB/s · " + std::to_wstring(c.simultaneous) +
                        tr(L" sessioni · porta dichiarata ") + std::to_wstring(c.port) +
@@ -280,7 +292,6 @@ void refresh(bool sample = false) {
         return;
     auto ids = selected();
     current = engine->view();
-    (void)sample;
     refreshLock = true;
     SendMessage(table, WM_SETREDRAW, FALSE, 0);
     bool rebuild = visibleIds.size() != current.rows.size();
@@ -342,7 +353,7 @@ void refresh(bool sample = false) {
     for (int i = 0; i < 4; ++i)
         SendMessage(statusbar, SB_SETTEXT, i, (LPARAM)totals[i].c_str());
     updateCommands();
-    RECT top = {0, 0, 30000, px(60)};
+    RECT top = {0, 0, 30000, px(56)};
     InvalidateRect(mainWindow, &top, FALSE);
 }
 void addPaths(const std::vector<fs::path> &paths) {
@@ -476,7 +487,7 @@ LRESULT CALLBACK settingsProc(HWND w, UINT m, WPARAM a, LPARAM b) {
                     300, 216);
             control(w, L"BUTTON", L"Mantieni torrent senza leecher (velocità zero)",
                     WS_TABSTOP | BS_AUTOCHECKBOX, 24, 378, 556, 26, 215);
-            control(w, L"BUTTON", L"Importa config JOAL", WS_TABSTOP, 24, 433, 180, 34, 217);
+            control(w, L"BUTTON", L"Importa configurazione…", WS_TABSTOP, 24, 433, 180, 34, 217);
             control(w, L"BUTTON", L"Applica", WS_TABSTOP | BS_DEFPUSHBUTTON, 370, 433, 100, 34,
                     218);
             control(w, L"BUTTON", L"Chiudi", WS_TABSTOP, 480, 433, 100, 34, 219);
@@ -676,7 +687,6 @@ LRESULT CALLBACK helpProc(HWND w, UINT m, WPARAM a, LPARAM b) {
              titleFont, ink);
         auto info = tr(L"Applicazione didattica C++ / Win32 per Windows.") + L"\n" +
                     tr(L"Upload simulato e annunci HTTP/HTTPS. Nessun trasferimento P2P.") + L"\n" +
-                    tr(L"Progetto indipendente ispirato a JOAL di Anthony Raymond.") + L"\n" +
                     tr(L"Licenza Apache-2.0. JSON: nlohmann/json, licenza MIT.") + L"\n" +
                     tr(L"X nasconde nella tray. Per chiudere: menu tray > Esci.");
         text(dc, info, {px(144), px(43), r.right - px(8), px(145)}, uiFont, muted,

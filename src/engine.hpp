@@ -184,7 +184,7 @@ inline HttpResult httpGet(const std::string &url, const json &p) {
         path.append(c.lpszExtraInfo, c.dwExtraInfoLength);
     if (path.find(L'#') != std::wstring::npos)
         throw std::runtime_error("Frammento URL tracker non valido.");
-    std::string agent = "TorrentDesk/0.2";
+    std::string agent = "TorrentDesk";
     for (const auto &h : p.at("requestHeaders"))
         if (h.at("name") == "User-Agent")
             agent = h.at("value");

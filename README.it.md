@@ -2,7 +2,7 @@
 
 # TorrentDesk
 
-Applicazione didattica **C++17 / Win32 per Windows x64**, ispirata a [JOAL](https://github.com/anthonyraymond/joal). Interfaccia italiana e inglese, nessun Java o Electron.
+Applicazione didattica **C++17 / Win32 per Windows x64**. Interfaccia italiana e inglese, nessun Java o Electron.
 
 **Versione 0.3.0: prototipo funzionante, compatibilità parziale.** Studia parsing bencode, infohash SHA-1, richieste announce HTTP/HTTPS, scheduling e GUI nativa. Upload e velocità sono **simulati**: non trasferisce il contenuto dei file ad altri peer. Gli annunci al tracker sono richieste reali.
 
@@ -18,9 +18,9 @@ Applicazione didattica **C++17 / Win32 per Windows x64**, ispirata a [JOAL](http
 
 ## Limiti espliciti
 
-Supportati dal motore 81 dei 95 profili upstream (famiglie qBittorrent, Deluge, Transmission). Gli altri sono identificati come sola consultazione nel selettore. **I profili non sono stati certificati per i client/OS attuali**: il nome di un file non è una prova di conformità. Gli esperimenti e i test forniti usano un tracker locale controllato.
+Inclusi 27 profili client, tutti supportati dal motore: qBittorrent 4.6–5.2, Deluge 2.x e Transmission 3.00. I client vecchi o non supportati sono stati rimossi. **I profili non sono stati certificati per i client/OS attuali**: il nome di un file non è una prova di conformità. Gli esperimenti e i test forniti usano un tracker locale controllato.
 
-Non supporta tracker UDP, torrent v2 puri, download P2P, DHT, ascolto di connessioni peer, proxy configurabile, autenticazione HTTP o redirect. La porta è solo dichiarata nell'annuncio. Usa il primo tracker HTTP/HTTPS del torrent; non è ancora implementato il failover tra tracker. Non replica integralmente JOAL. Gli stopped in chiusura sono best effort con un budget temporale. Il contatore “annunciato” indica il cumulativo nell'ultimo announce riuscito per sessione, non un trasferimento P2P.
+Non supporta tracker UDP, torrent v2 puri, download P2P, DHT, ascolto di connessioni peer, proxy configurabile, autenticazione HTTP o redirect. La porta è solo dichiarata nell'annuncio. Usa il primo tracker HTTP/HTTPS del torrent; non è ancora implementato il failover tra tracker. Gli stopped in chiusura sono best effort con un budget temporale. Il contatore “annunciato” indica il cumulativo nell'ultimo announce riuscito per sessione, non un trasferimento P2P.
 
 ## Compilazione
 
@@ -79,7 +79,7 @@ Con Inno Setup 6 genera `dist/TorrentDesk-0.3.0-Setup-x64.exe`. L'eseguibile non
 
 `src/torrent.hpp`: bencode e metadati; `src/engine.hpp`: protocollo e sessioni; `src/main.cpp`: GUI; `src/tests.cpp`: regressioni. `tools/`: tracker e dimostrazioni. La CI Windows compila e verifica i test.
 
-Apache-2.0, vedere [LICENSE](LICENSE) e [NOTICE](NOTICE). Profili ereditati da JOAL; `nlohmann/json` è MIT. Progetto indipendente, non una release ufficiale di JOAL. Per contribuire, vedere [CONTRIBUTING.md](CONTRIBUTING.md).
+Apache-2.0, vedere [LICENSE](LICENSE) e [NOTICE](NOTICE). Profili client e convenzioni peer/key derivati da lavoro di terzi Apache-2.0 (vedere NOTICE); `nlohmann/json` è MIT. Per contribuire, vedere [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Novita 0.3.0
 
