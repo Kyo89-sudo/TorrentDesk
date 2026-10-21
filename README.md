@@ -52,13 +52,13 @@ Coming from JOAL? **Settings → Import configuration…** reads its `config.jso
 
 ## Client profiles
 
-28 profiles, all supported by the engine:
+29 profiles, all supported by the engine:
 
 | Client | Versions |
 |---|---|
 | qBittorrent | 4.6.0 – 5.2.4 (**default: 5.2.4**) |
 | Deluge | 2.0.3, 2.1.1 |
-| Transmission | 3.00 |
+| Transmission | 3.00, 4.1.3 |
 | rTorrent | 0.9.6 / libtorrent 0.13.6 — *experimental* |
 
 A profile defines peer_id, key, query and HTTP headers. Profiles are **not certified** against current client/OS combinations; a version string is not proof of conformity. UDP has no headers, so there only peer_id and key reflect the profile.

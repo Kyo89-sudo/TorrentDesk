@@ -52,13 +52,13 @@ Arrivi da JOAL? **Impostazioni → Importa configurazione…** legge il suo `con
 
 ## Profili client
 
-28 profili, tutti supportati dal motore:
+29 profili, tutti supportati dal motore:
 
 | Client | Versioni |
 |---|---|
 | qBittorrent | 4.6.0 – 5.2.4 (**predefinito: 5.2.4**) |
 | Deluge | 2.0.3, 2.1.1 |
-| Transmission | 3.00 |
+| Transmission | 3.00, 4.1.3 |
 | rTorrent | 0.9.6 / libtorrent 0.13.6 — *sperimentale* |
 
 Un profilo definisce peer_id, key, query e header HTTP. I profili **non sono certificati** per le combinazioni client/OS attuali; il numero di versione non è una prova di conformità. UDP non ha header, quindi lì il profilo si riflette solo in peer_id e key.

@@ -65,8 +65,9 @@ inline bool supportedProfile(const json &p) {
         auto peer = p.at("peerIdGenerator").at("algorithm");
         auto key = p.at("keyGenerator").at("algorithm");
         auto type = peer.at("type").get<std::string>();
-        if (type == "RANDOM_POOL_WITH_CHECKSUM")
-            return key.at("type") == "DIGIT_RANGE_TRANSFORMED_TO_HEX_WITHOUT_LEADING_ZEROES";
+        if (type == "RANDOM_POOL_WITH_CHECKSUM") // Transmission: 3.x digit range, 4.x 8-hex key
+            return key.at("type") == "DIGIT_RANGE_TRANSFORMED_TO_HEX_WITHOUT_LEADING_ZEROES" ||
+                   key.at("type") == "HASH";
         auto pat = peer.at("pattern").get<std::string>();
         return type == "REGEX" &&
                (pat.rfind("-qB", 0) == 0 || pat.rfind("-DE", 0) == 0 ||

@@ -3,7 +3,9 @@ Educational native Windows port inspired by JOAL.
 
 Upstream: https://github.com/anthonyraymond/joal
 Snapshot: 4f7e40d84859ef00181b5a23a5c7d5b34fa7bac3
-The client profiles in profiles/ are copied without modification from upstream.
+The client profiles in profiles/ are copied without modification from upstream,
+except transmission-4.1.3.client, written for TorrentDesk from protocol facts
+(peer_id, key, query order, headers) read in the Transmission 4.1.3 source.
 Configuration conventions and peer/key algorithms are ported from JOAL.
 JOAL and its contributors retain their original rights under Apache-2.0.
 TorrentDesk is an independent project and is not an official JOAL release.

@@ -103,6 +103,26 @@ int main(int argc, char **argv) {
         REQUIRE(announceQuery(profile, meta, peer, key, 123, "stopped", 49152).find("numwant=0") !=
                 std::string::npos);
         REQUIRE(encode(std::string("\0\xff", 2), profile) == "%00%ff");
+        // Transmission 4.1.3 (from libtransmission/session.cc, announcer-http.cc):
+        // "-TR4130-" + 11 chars of base36 + checksum so the digit sum is 0 mod 36,
+        // key "%08X", unreserved [A-Za-z0-9-_.~], upper-case %XX.
+        auto tr4 = readJson(base / "profiles" / "transmission-4.1.3.client");
+        REQUIRE(supportedProfile(tr4));
+        for (int i = 0; i < 200; ++i) {
+            auto id = peerId(tr4);
+            REQUIRE(id.size() == 20 && id.rfind("-TR4130-", 0) == 0);
+            const std::string pool = "0123456789abcdefghijklmnopqrstuvwxyz";
+            int sum = 0;
+            for (size_t k = 8; k < 20; ++k) {
+                auto at = pool.find(id[k]);
+                REQUIRE(at != std::string::npos);
+                sum += (int)at;
+            }
+            REQUIRE(sum % 36 == 0);
+            auto k = makeKey(tr4);
+            REQUIRE(k.size() == 8 && k.find_first_not_of("0123456789ABCDEF") == std::string::npos);
+        }
+        REQUIRE(encode(std::string("\x01~._-a", 6), tr4) == "%01~._-a");
         // rTorrent 0.9.6: "-lt0D60-" + 12 non-zero binary bytes, upper-case %XX, fixed order.
         auto rt = readJson(base / "profiles" / "rtorrent-0.9.6_0.13.6.client");
         REQUIRE(supportedProfile(rt));
