@@ -11,9 +11,20 @@ logo = Image.open(OUT / 'flow-logo.png').convert('RGBA')
 logo.save(OUT / 'torrentdesk.ico', sizes=SIZES)
 logo.resize((256,256), Image.Resampling.LANCZOS).save(OUT / 'torrentdesk.png')
 
-# Command icons: flat line glyphs in the UI ink colour on a transparent
-# background, so they sit quietly on native push buttons.
-INK = (38, 56, 66, 255)
+# Command icons: simple flat glyphs on a transparent background, filled with
+# the Flow logo gradient (blue -> cyan), so they match the app icon while
+# sitting quietly on native push buttons. Shapes are drawn as a mask first.
+INK = (255, 255, 255, 255)
+def flow_fill(mask):
+    im = Image.new('RGBA', (256, 256))
+    d = ImageDraw.Draw(im)
+    a, b = (0, 96, 240), (0, 178, 228)  # darker than the logo for contrast on light buttons
+    for i in range(512):
+        t = i / 511
+        c = tuple(int(x + (y - x) * t) for x, y in zip(a, b)) + (255,)
+        d.line((i - 256, 256, i, 0), fill=c, width=2)  # diagonal, bottom-left -> top-right
+    im.putalpha(mask.getchannel('A'))
+    return im
 W = 22  # stroke width at 256 px (~1.7 px at 20 px)
 def glyph(name):
     im = Image.new('RGBA', (256, 256), (0, 0, 0, 0))
@@ -51,7 +62,7 @@ def glyph(name):
     return im
 
 for name in ['add', 'start', 'pause', 'remove', 'settings', 'tray', 'help']:
-    tile = glyph(name)
+    tile = flow_fill(glyph(name))
     tile.save(OUT / (name + '.ico'), sizes=SIZES)
     tile.resize((64, 64), Image.Resampling.LANCZOS).save(OUT / (name + '.png'))
 print('Flow application icon and 7 flat command icons ready')
