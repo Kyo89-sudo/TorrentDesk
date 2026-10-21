@@ -45,6 +45,19 @@ bool uiSmoke = false;
 int uiStage = 0, uiTestExit = 0;
 json uiResults = json::object();
 std::atomic<bool> closed = false;
+bool closeToTray = true; // X hides to the tray (setting, saved in ui.json)
+void saveUiPreferences() {
+    auto temp = dataDir / L"ui.tmp";
+    {
+        std::ofstream out(temp);
+        out << json{{"language", locale.code()}, {"closeToTray", closeToTray}}.dump(2);
+        if (!out.flush())
+            throw std::runtime_error("Cannot save UI preferences.");
+    }
+    if (!MoveFileEx(temp.c_str(), (dataDir / L"ui.json").c_str(),
+                    MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+        throw std::runtime_error("Cannot save UI preferences.");
+}
 std::thread closer;
 const COLORREF ink = RGB(26, 48, 57), muted = RGB(91, 111, 120), bg = RGB(249, 250, 251);
 int px(int v) { return MulDiv(v, (int)dpi, 96); }
@@ -489,14 +502,24 @@ LRESULT CALLBACK settingsProc(HWND w, UINT m, WPARAM a, LPARAM b) {
                     300, 216);
             control(w, L"BUTTON", L"Mantieni torrent senza leecher (velocità zero)",
                     WS_TABSTOP | BS_AUTOCHECKBOX, 24, 378, 556, 26, 215);
-            control(w, L"BUTTON", L"Importa configurazione…", WS_TABSTOP, 24, 433, 180, 34, 217);
-            control(w, L"BUTTON", L"Applica", WS_TABSTOP | BS_DEFPUSHBUTTON, 370, 433, 100, 34,
+            control(w, L"BUTTON", L"Chiudendo con X riduci nell'area di notifica",
+                    WS_TABSTOP | BS_AUTOCHECKBOX, 24, 408, 556, 26, 220);
+            CheckDlgButton(w, 220, closeToTray ? BST_CHECKED : BST_UNCHECKED);
+            control(w, L"BUTTON", L"Importa configurazione…", WS_TABSTOP, 24, 458, 180, 34, 217);
+            control(w, L"BUTTON", L"Applica", WS_TABSTOP | BS_DEFPUSHBUTTON, 370, 458, 100, 34,
                     218);
-            control(w, L"BUTTON", L"Chiudi", WS_TABSTOP, 480, 433, 100, 34, 219);
+            control(w, L"BUTTON", L"Chiudi", WS_TABSTOP, 480, 458, 100, 34, 219);
             populateSettings(w);
             return 0;
         }
         case WM_COMMAND:
+            if (LOWORD(a) == 220 && HIWORD(a) == BN_CLICKED) {
+                // Window behaviour, applied at once: no need to pause sessions.
+                closeToTray = IsDlgButtonChecked(w, 220) == BST_CHECKED;
+                saveUiPreferences();
+                InvalidateRect(helpPane, nullptr, FALSE);
+                return 0;
+            }
             if (LOWORD(a) == 219) {
                 DestroyWindow(w);
                 return 0;
@@ -555,7 +578,7 @@ void openSettings() {
     }
     settingsWindow = CreateWindowEx(
         WS_EX_DLGMODALFRAME, L"TorrentDeskSettings", tr(L"TorrentDesk · Impostazioni").c_str(),
-        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, px(630), px(530),
+        WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT, px(630), px(555),
         mainWindow, nullptr, appInstance, nullptr);
     if (settingsWindow) {
         RECT parent;
@@ -690,7 +713,9 @@ LRESULT CALLBACK helpProc(HWND w, UINT m, WPARAM a, LPARAM b) {
         auto info = tr(L"Applicazione didattica C++ / Win32 per Windows.") + L"\n" +
                     tr(L"Upload simulato e annunci HTTP/HTTPS. Nessun trasferimento P2P.") + L"\n" +
                     tr(L"Licenza Apache-2.0. JSON: nlohmann/json, licenza MIT.") + L"\n" +
-                    tr(L"X nasconde nella tray. Per chiudere: menu tray > Esci.");
+                    tr(closeToTray ? L"X nasconde nella tray (modificabile in Impostazioni). Per "
+                                     L"chiudere: menu tray > Esci."
+                                   : L"X chiude il programma (modificabile in Impostazioni).");
         text(dc, info, {px(144), px(43), r.right - px(8), px(145)}, uiFont, muted,
              DT_LEFT | DT_WORDBREAK);
         EndPaint(w, &ps);
@@ -937,16 +962,7 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
                     auto old = locale.code();
                     try {
                         locale.load(base, languageChoices[index].first);
-                        auto temp = dataDir / L"ui.tmp";
-                        {
-                            std::ofstream out(temp);
-                            out << json{{"language", locale.code()}}.dump(2);
-                            if (!out.flush())
-                                throw std::runtime_error("Cannot save UI preferences.");
-                        }
-                        if (!MoveFileEx(temp.c_str(), (dataDir / L"ui.json").c_str(),
-                                        MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
-                            throw std::runtime_error("Cannot save UI preferences.");
+                        saveUiPreferences();
                         applyLanguage();
                     } catch (...) {
                         locale.load(base, old);
@@ -1024,8 +1040,12 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
             return 0;
         }
         case WM_CLOSE:
-            if (!closing)
-                hideToTray();
+            if (!closing) {
+                if (closeToTray)
+                    hideToTray();
+                else
+                    beginExit();
+            }
             return 0;
         case WM_QUERYENDSESSION:
             return TRUE;
@@ -1118,8 +1138,11 @@ int WINAPI wWinMain(HINSTANCE h, HINSTANCE, LPWSTR, int n) {
         std::string language =
             PRIMARYLANGID(GetUserDefaultUILanguage()) == LANG_ITALIAN ? "it" : "en";
         try {
-            if (fs::exists(dataDir / L"ui.json"))
-                language = readJson(dataDir / L"ui.json").value("language", language);
+            if (fs::exists(dataDir / L"ui.json")) {
+                auto ui = readJson(dataDir / L"ui.json");
+                language = ui.value("language", language);
+                closeToTray = ui.value("closeToTray", true);
+            }
         } catch (...) {
         }
         try {

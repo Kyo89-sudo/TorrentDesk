@@ -172,6 +172,9 @@
     "Rimuovi i torrent selezionati": "Remove the selected torrents",
     "Range di upload, sessioni simultanee, ratio, porta e profilo client": "Upload range, simultaneous sessions, ratio, port and client profile",
     "Nascondi nell'area di notifica; i torrent continuano": "Hide to the notification area; torrents keep running",
-    " [sperimentale]": " [experimental]"
+    " [sperimentale]": " [experimental]",
+    "Chiudendo con X riduci nell'area di notifica": "Close button (X) minimizes to the notification area",
+    "X nasconde nella tray (modificabile in Impostazioni). Per chiudere: menu tray > Esci.": "X hides to the tray (change in Settings). To quit: tray menu > Exit.",
+    "X chiude il programma (modificabile in Impostazioni).": "X quits the program (change in Settings)."
   }
 }
