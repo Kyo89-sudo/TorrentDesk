@@ -31,7 +31,10 @@ def main():
             elif url.path == "/announce":
                 query = parse_qs(url.query)
                 print(json.dumps({"event": query.get("event", ["periodic"])[0],
-                                  "uploaded": query.get("uploaded", ["0"])[0]}), flush=True)
+                                  "uploaded": query.get("uploaded", ["0"])[0],
+                                  "query": url.query,
+                                  "headers": {k: v for k, v in self.headers.items()}}),
+                      flush=True)
                 interval = 1 if args.fast else 30
                 body = (b"d8:completei2e10:incompletei3e8:intervali" +
                         str(interval).encode("ascii") + b"ee")

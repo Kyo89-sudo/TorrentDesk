@@ -22,7 +22,7 @@ Version **0.3.0 is a working prototype with partial protocol/client compatibilit
 
 ## Explicit limitations
 
-28 client profiles are included, all supported by the native engine: qBittorrent 4.6–5.2, Deluge 2.x, Transmission 3.00 and rTorrent 0.9.6. Older and unsupported clients have been removed. These profiles are **not certified against current client/OS combinations**; a filename/version string is not proof of conformity.
+28 client profiles are included, all supported by the native engine: qBittorrent 4.6–5.2, Deluge 2.x, Transmission 3.00 and rTorrent 0.9.6 (experimental). The default profile is qBittorrent 5.2.4. Older and unsupported clients have been removed. These profiles are **not certified against current client/OS combinations**; a filename/version string is not proof of conformity.
 
 HTTP/HTTPS only; no UDP, pure v2 torrents, payload downloads, DHT, peer listener, configurable proxy, HTTP authentication or redirects. The advertised port is not a listening port. Uses the first HTTP/HTTPS tracker; tracker failover is not implemented. Torrents are announced complete (`left=0`) without checking files. Shutdown stopped announces are best effort with a time budget.
 

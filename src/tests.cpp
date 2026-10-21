@@ -103,6 +103,30 @@ int main(int argc, char **argv) {
         REQUIRE(announceQuery(profile, meta, peer, key, 123, "stopped", 49152).find("numwant=0") !=
                 std::string::npos);
         REQUIRE(encode(std::string("\0\xff", 2), profile) == "%00%ff");
+        // rTorrent 0.9.6: "-lt0D60-" + 12 non-zero binary bytes, upper-case %XX, fixed order.
+        auto rt = readJson(base / "profiles" / "rtorrent-0.9.6_0.13.6.client");
+        REQUIRE(supportedProfile(rt));
+        for (int i = 0; i < 200; ++i) {
+            auto id = peerId(rt);
+            REQUIRE(id.size() == 20 && id.rfind("-lt0D60-", 0) == 0 &&
+                    id.find('\0') == std::string::npos);
+        }
+        auto rtPeer = std::string("-lt0D60-") + std::string("\x01\x7f\x80\xff abcdefgh", 12);
+        auto rtKey = makeKey(rt);
+        REQUIRE(rtKey.size() <= 8 && rtKey.find_first_not_of("0123456789abcdef") == std::string::npos);
+        auto rtQuery = announceQuery(rt, meta, rtPeer, rtKey, 0, "started", 49152);
+        REQUIRE(rtQuery.find("peer_id=-lt0D60-%01%7F%80%FF%20abcdefg&") != std::string::npos);
+        {
+            const char *order[] = {"info_hash=", "&peer_id=", "&key=",    "&compact=1",
+                                   "&port=",     "&uploaded=", "&downloaded=", "&left=",
+                                   "&event=started"};
+            size_t at = 0;
+            for (auto name : order) {
+                auto next = rtQuery.find(name, at);
+                REQUIRE(next != std::string::npos);
+                at = next;
+            }
+        }
         REQUIRE(parseReply("d8:completei2e10:incompletei3e8:intervali1e12:min intervali45ee")
                     .interval == 45);
         rejects([&] { parseReply("d14:failure reason4:nopee"); });
@@ -140,6 +164,11 @@ int main(int argc, char **argv) {
             REQUIRE(result.body == "ok");
             auto reply = httpGet("http://127.0.0.1:18765/announce?" + query, profile);
             REQUIRE(parseReply(reply.body, 1).leechers == 3);
+            // Port 40000 marks this hand-built request; run_integration.py excludes it from
+            // the peer_id/key persistence check (it uses a fixed test peer_id).
+            auto rtDirect = announceQuery(rt, meta, rtPeer, rtKey, 0, "started", 40000);
+            REQUIRE(parseReply(httpGet("http://127.0.0.1:18765/announce?" + rtDirect, rt).body, 1)
+                        .leechers == 3);
             rejects([&] { httpGet("http://127.0.0.1:18765/redirect", profile); });
             rejects([&] { httpGet("http://127.0.0.1:18765/fail", profile); });
             {
@@ -172,6 +201,32 @@ int main(int argc, char **argv) {
                 auto before = engine.view().rows[0].lifetime;
                 std::this_thread::sleep_for(std::chrono::milliseconds(500));
                 REQUIRE(engine.view().rows[0].lifetime == before);
+                engine.shutdown();
+            }
+            {
+                // Two start/stop cycles with the rTorrent profile: the tracker log is checked
+                // by run_integration.py for a stable (TORRENT_PERSISTENT) peer_id and key.
+                DeskEngine engine(work / "rtorrent-session", base / "profiles", 1);
+                engine.add(torrent);
+                auto c = good;
+                c["client"] = "rtorrent-0.9.6_0.13.6.client";
+                engine.setConfig(c);
+                for (int cycle = 0; cycle < 2; ++cycle) {
+                    engine.command({}, 1);
+                    bool started = false;
+                    for (int i = 0; i < 70 && !started; ++i) {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                        started = engine.view().rows[0].started;
+                    }
+                    REQUIRE(started);
+                    engine.command({}, 2);
+                    bool stopped = false;
+                    for (int i = 0; i < 70 && !stopped; ++i) {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                        stopped = !engine.view().rows[0].started;
+                    }
+                    REQUIRE(stopped);
+                }
                 engine.shutdown();
             }
             std::cout << "PASS: HTTP locale, errori/redirect, scheduler started/periodico/stopped, "

@@ -171,6 +171,7 @@
     "Metti in pausa i torrent selezionati, o tutti se nessuno è selezionato": "Pause the selected torrents, or all of them if none is selected",
     "Rimuovi i torrent selezionati": "Remove the selected torrents",
     "Range di upload, sessioni simultanee, ratio, porta e profilo client": "Upload range, simultaneous sessions, ratio, port and client profile",
-    "Nascondi nell'area di notifica; i torrent continuano": "Hide to the notification area; torrents keep running"
+    "Nascondi nell'area di notifica; i torrent continuano": "Hide to the notification area; torrents keep running",
+    " [sperimentale]": " [experimental]"
   }
 }

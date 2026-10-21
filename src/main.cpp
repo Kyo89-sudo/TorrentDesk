@@ -432,6 +432,8 @@ void populateSettings(HWND w) {
         auto label = profileFiles[i].stem().wstring();
         if (!supportedProfile(readJson(profileFiles[i])))
             label += tr(L" [solo consultazione]");
+        else if (label.rfind(L"rtorrent-", 0) == 0)
+            label += tr(L" [sperimentale]");
         int idx = (int)SendMessage(combo, CB_ADDSTRING, 0, (LPARAM)label.c_str());
         SendMessage(combo, CB_SETITEMDATA, idx, (LPARAM)i);
         if (utf8(profileFiles[i].filename().wstring()) == c.client)
