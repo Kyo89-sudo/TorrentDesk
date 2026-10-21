@@ -7,6 +7,7 @@ Update to 0.4.0 with tracker reliability and torrent-list improvements.
 - **HTTP redirects** followed (up to 2, never HTTPS→HTTP).
 - **Sortable columns** with remembered sort order and widths.
 - **Tracker column** with the host in use.
+- **Resizable details area:** drag the border between the list and the tabs; the height is remembered.
 - **Right-click menu:** Start/Pause, Remove, Copy name, Copy infohash. **Del** removes after confirmation, **Ctrl+A** selects all.
 - `sign.cmd` for local code signing (for maintainers).
 

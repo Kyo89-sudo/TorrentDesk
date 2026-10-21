@@ -53,12 +53,15 @@ int sortColumn = -1;       // -1 = order of addition
 bool sortAscending = true;
 bool userWidths = false;   // user resized columns: keep their widths, no auto-fit
 std::vector<int> savedWidths; // in 96-dpi units, from ui.json
+int panelHeight = 185;        // bottom area (tabs + details), 96-dpi units; draggable
+bool draggingSplitter = false;
 void saveUiPreferences() {
     auto temp = dataDir / L"ui.tmp";
     json ui = {{"language", locale.code()},
                {"closeToTray", closeToTray},
                {"sortColumn", sortColumn},
-               {"sortAscending", sortAscending}};
+               {"sortAscending", sortAscending},
+               {"panelHeight", panelHeight}};
     if (userWidths && table) {
         json widths = json::array();
         for (int i = 0; i < columnCount; ++i)
@@ -184,11 +187,15 @@ void layout() {
     RECT r;
     GetClientRect(mainWindow, &r);
     int width = r.right, height = r.bottom;
-    int top = px(108), tabY = height - px(TabCtrl_GetCurSel(tabs) == 3 ? 260 : 185);
+    // The bottom area is resizable with the splitter between list and tabs; Help needs 260.
+    int bottom = std::max(panelHeight, TabCtrl_GetCurSel(tabs) == 3 ? 260 : 150);
+    int top = px(108);
+    int tabY = std::max(top + px(150), height - px(bottom));
+    int area = std::max(px(77), height - tabY - px(73));
     MoveWindow(table, px(16), top, width - px(32), std::max(px(140), tabY - top - px(10)), TRUE);
     MoveWindow(tabs, px(16), tabY, width - px(32), px(28), TRUE);
-    MoveWindow(panel, px(18), tabY + px(34), width - px(36), px(112), TRUE);
-    MoveWindow(helpPane, px(18), tabY + px(34), width - px(36), px(187), TRUE);
+    MoveWindow(panel, px(18), tabY + px(34), width - px(36), area, TRUE);
+    MoveWindow(helpPane, px(18), tabY + px(34), width - px(36), area, TRUE);
     MoveWindow(languageCombo, width - px(164), px(13), px(148), px(250), TRUE);
     MoveWindow(statusbar, 0, height - px(27), width, px(27), TRUE);
     int parts[] = {px(235), px(485), px(740), -1};
@@ -948,6 +955,58 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
             layout();
             return 0;
         }
+        case WM_SETCURSOR:
+            if ((HWND)a == w && LOWORD(b) == HTCLIENT) {
+                POINT pt;
+                GetCursorPos(&pt);
+                ScreenToClient(w, &pt);
+                RECT t, tb;
+                GetWindowRect(table, &t);
+                GetWindowRect(tabs, &tb);
+                MapWindowPoints(nullptr, w, (POINT *)&t, 2);
+                MapWindowPoints(nullptr, w, (POINT *)&tb, 2);
+                if (pt.y >= t.bottom && pt.y < tb.top) {
+                    SetCursor(LoadCursor(nullptr, IDC_SIZENS));
+                    return TRUE;
+                }
+            }
+            break;
+        case WM_LBUTTONDOWN: {
+            RECT t, tb;
+            GetWindowRect(table, &t);
+            GetWindowRect(tabs, &tb);
+            MapWindowPoints(nullptr, w, (POINT *)&t, 2);
+            MapWindowPoints(nullptr, w, (POINT *)&tb, 2);
+            int y = (short)HIWORD(b);
+            if (y >= t.bottom && y < tb.top) {
+                draggingSplitter = true;
+                SetCapture(w);
+            }
+            return 0;
+        }
+        case WM_MOUSEMOVE:
+            if (draggingSplitter) {
+                RECT r;
+                GetClientRect(w, &r);
+                int y = (short)HIWORD(b);
+                int maxBottom = MulDiv(r.bottom - px(108 + 150), 96, (int)dpi);
+                panelHeight = std::clamp(MulDiv(r.bottom - y, 96, (int)dpi), 150,
+                                         std::max(150, maxBottom));
+                layout();
+            }
+            return 0;
+        case WM_LBUTTONUP:
+        case WM_CAPTURECHANGED:
+            if (draggingSplitter) {
+                draggingSplitter = false;
+                if (m == WM_LBUTTONUP)
+                    ReleaseCapture();
+                try {
+                    saveUiPreferences();
+                } catch (...) {
+                }
+            }
+            return 0;
         case WM_GETMINMAXINFO:
             ((MINMAXINFO *)b)->ptMinTrackSize = {px(1000), px(600)};
             return 0;
@@ -1313,6 +1372,7 @@ int WINAPI wWinMain(HINSTANCE h, HINSTANCE, LPWSTR, int n) {
                 closeToTray = ui.value("closeToTray", true);
                 sortColumn = std::clamp(ui.value("sortColumn", -1), -1, columnCount - 1);
                 sortAscending = ui.value("sortAscending", true);
+                panelHeight = std::clamp(ui.value("panelHeight", 185), 150, 2000);
                 if (ui.contains("columnWidths") && ui["columnWidths"].is_array())
                     for (const auto &v : ui["columnWidths"])
                         if (v.is_number_integer())

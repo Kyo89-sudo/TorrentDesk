@@ -11,6 +11,7 @@ All notable changes to TorrentDesk. Versions follow [Semantic Versioning](https:
 - Tracker column showing the host in use.
 - Right-click menu on the list: Start/Pause (all), Remove, Copy name, Copy infohash. Del removes after confirmation, Ctrl+A selects all.
 - `sign.cmd` for local Authenticode signing of the executable and installer.
+- Resizable details area: drag the border between the list and the tabs; the height is remembered.
 - Tests for redirects (with query, loop rejected) and failover from a failing tracker.
 
 ### Changed

@@ -12,7 +12,7 @@ Applicazione didattica **C++17 / Win32 per Windows x64**. Interfaccia italiana e
 ## Funzioni
 
 - Importazione multipla di `.torrent` v1 e ibridi, anche tramite drag-and-drop.
-- Nome, dimensione, velocità simulata, upload, ratio, seed/leecher, conto alla rovescia e tracker in uso. Clic sull'intestazione per ordinare; ordinamento e larghezza colonne vengono ricordati.
+- Nome, dimensione, velocità simulata, upload, ratio, seed/leecher, conto alla rovescia e tracker in uso. Clic sull'intestazione per ordinare; ordinamento e larghezza colonne vengono ricordati. Trascina il bordo sopra le schede per allargare l'area dettagli.
 - Menu tasto destro (Avvia/Pausa, Rimuovi, Copia nome/infohash), Canc per rimuovere con conferma, Ctrl+A per selezionare tutto.
 - Avvia, pausa, rimuovi; senza selezione i pulsanti diventano Avvia tutti / Pausa tutti. Suggerimenti su ogni comando.
 - Tray e, se attiva in Impostazioni, la X nascondono la finestra nell'area di notifica.
@@ -98,7 +98,7 @@ Apache-2.0, vedere [LICENSE](LICENSE) e [NOTICE](NOTICE). Profili client e conve
 
 ## Novità 0.4.1
 
-Failover tra tracker e redirect HTTP. Colonne ordinabili con larghezze ricordate, colonna Tracker, menu tasto destro, Canc con conferma e Ctrl+A. Script `sign.cmd` per la firma locale.
+Failover tra tracker e redirect HTTP. Colonne ordinabili con larghezze ricordate, colonna Tracker, menu tasto destro, Canc con conferma e Ctrl+A, area dettagli ridimensionabile. Script `sign.cmd` per la firma locale.
 
 ## Novità 0.4.0
 

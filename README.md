@@ -14,7 +14,7 @@ Version **0.4.1 is a working prototype with partial protocol/client compatibilit
 - Flow logo, navy header in the logo palette, flat command icons and the version shown in the header.
 - English and Italian UI, switchable immediately with a remembered preference.
 - Multiple .torrent imports and drag-and-drop; v1 and hybrid metadata.
-- Size, status, simulated speed/upload/ratio, seeders/leechers, announce countdown and the tracker in use. Click a header to sort; sort order and column widths are remembered.
+- Size, status, simulated speed/upload/ratio, seeders/leechers, announce countdown and the tracker in use. Click a header to sort; sort order and column widths are remembered. Drag the border above the tabs to resize the details area.
 - Right-click menu (Start/Pause, Remove, Copy name/infohash), Del to remove with confirmation, Ctrl+A to select all.
 - Start, pause, remove; with no selection the buttons read Start all / Pause all. Tooltips on every command.
 - Global upload range, simultaneous-session limit, ratio target and announced port.
