@@ -193,7 +193,7 @@ struct HttpOnce {
     std::string location;
     HttpResult result;
 };
-inline HttpOnce httpGetOnce(const std::string &url, const json &p) {
+inline HttpOnce httpGetOnce(const std::string &url, const json &p, bool fastStop = false) {
     auto u = wide(url);
     URL_COMPONENTS c = {sizeof(c)};
     c.dwHostNameLength = c.dwUrlPathLength = c.dwExtraInfoLength = c.dwUserNameLength =
@@ -215,7 +215,10 @@ inline HttpOnce httpGetOnce(const std::string &url, const json &p) {
             agent = h.at("value");
     HttpHandle session(WinHttpOpen(wide(agent).c_str(), WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
                                    WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0));
-    WinHttpSetTimeouts(session, 2000, 3000, 4000, 4000);
+    if (fastStop)
+        WinHttpSetTimeouts(session, 750, 750, 750, 750);
+    else
+        WinHttpSetTimeouts(session, 2000, 3000, 4000, 4000);
     HttpHandle connect(WinHttpConnect(session, host.c_str(), c.nPort, 0));
     HttpHandle request(WinHttpOpenRequest(
         connect, L"GET", path.c_str(), nullptr, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES,
@@ -266,7 +269,7 @@ inline HttpOnce httpGetOnce(const std::string &url, const json &p) {
     auto &result = once.result;
     char buffer[16384];
     DWORD got = 0;
-    auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(12);
+    auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(4);
     for (;;) {
         if (!WinHttpReadData(request, buffer, sizeof(buffer), &got))
             throw std::runtime_error("Risposta tracker interrotta.");
@@ -282,10 +285,10 @@ inline HttpOnce httpGetOnce(const std::string &url, const json &p) {
 }
 // Follows up to two redirects. Relative locations stay on the same host; an absolute one
 // must be HTTP(S) and may not downgrade HTTPS to HTTP.
-inline HttpResult httpGet(const std::string &url, const json &p) {
+inline HttpResult httpGet(const std::string &url, const json &p, bool fastStop = false) {
     std::string current = url;
     for (int hop = 0; hop <= 2; ++hop) {
-        auto once = httpGetOnce(current, p);
+        auto once = httpGetOnce(current, p, fastStop);
         if (once.location.empty() && once.status == 200)
             return once.result;
         if (once.location.empty() || hop == 2)
@@ -437,18 +440,20 @@ class DeskEngine {
         auto shutdownDeadline = Clock::time_point::max();
         for (;;) {
             TorrentRow task;
-            bool work = false;
+            bool work = false, shuttingDown = false;
             std::string event;
             int port = 0;
             {
                 std::unique_lock<std::mutex> lock(mu);
-                cv.wait_for(lock, std::chrono::milliseconds(200));
+                // Drain stopped announces without a scheduler sleep between torrents.
+                if (!quit) cv.wait_for(lock, std::chrono::milliseconds(200));
+                shuttingDown = quit;
                 auto now = Clock::now();
                 double elapsed = std::chrono::duration<double>(now - last).count();
                 last = now;
                 if (quit) {
                     if (shutdownDeadline == Clock::time_point::max())
-                        shutdownDeadline = now + std::chrono::seconds(12);
+                        shutdownDeadline = now + std::chrono::seconds(4);
                     for (auto &r : rows)
                         r.wanted = false;
                     if (now > shutdownDeadline) {
@@ -577,7 +582,8 @@ class DeskEngine {
                 std::vector<std::string> candidates;
                 if (!task.tracker.empty())
                     candidates.push_back(task.tracker);
-                for (const auto &url : task.meta.trackers)
+                // On exit notify the tracker that accepted the session; no failover tour.
+                if (!shuttingDown) for (const auto &url : task.meta.trackers)
                     if ((httpUrl(url) || udpUrl(url)) && url != task.tracker)
                         candidates.push_back(url);
                 if (candidates.empty())
@@ -587,7 +593,7 @@ class DeskEngine {
                 std::string lastError;
                 for (const auto &url : candidates) {
                     try {
-                        reply = announceTo(task, url, event, port, responseBytes);
+                        reply = announceTo(task, url, event, port, responseBytes, shuttingDown);
                         if (!task.tracker.empty() && url != task.tracker)
                             switched = url;
                         task.tracker = url;
@@ -676,12 +682,12 @@ class DeskEngine {
     }
 
     TrackerReply announceTo(const TorrentRow &task, const std::string &url,
-                            const std::string &event, int port, uint64_t &bytes) {
+                            const std::string &event, int port, uint64_t &bytes, bool fastStop = false) {
         if (udpUrl(url)) {
             auto numwant =
                 task.profile.at(event == "stopped" ? "numwantOnStop" : "numwant").get<int>();
             auto udp = udpAnnounce(url, task.meta.hash, task.peer, task.key, task.uploaded, event,
-                                   port, numwant, random32(), intervalFloor);
+                                   port, numwant, random32(), intervalFloor, fastStop);
             bytes += udp.received;
             TrackerReply reply;
             reply.interval = udp.interval;
@@ -692,7 +698,7 @@ class DeskEngine {
         auto query =
             announceQuery(task.profile, task.meta, task.peer, task.key, task.uploaded, event, port);
         auto full = url + (url.find('?') == std::string::npos ? "?" : "&") + query;
-        auto result = httpGet(full, task.profile);
+        auto result = httpGet(full, task.profile, fastStop);
         bytes += result.received;
         return parseReply(result.body, intervalFloor);
     }

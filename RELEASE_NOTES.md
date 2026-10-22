@@ -1,8 +1,8 @@
-## TorrentDesk 0.4.1 Preview
+## TorrentDesk 0.4.2 Preview
 
 Update to 0.4.0 with tracker reliability and torrent-list improvements.
 
-### New in 0.4.1
+### New in 0.4.2
 - **Tracker failover:** if the tracker in use fails, the next ones in the torrent are tried (up to 4 per attempt) and the working one is kept.
 - **HTTP redirects** followed (up to 2, never HTTPS→HTTP).
 - **Sortable columns** with remembered sort order and widths.

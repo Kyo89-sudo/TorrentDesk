@@ -55,6 +55,7 @@ bool userWidths = false;   // user resized columns: keep their widths, no auto-f
 std::vector<int> savedWidths; // in 96-dpi units, from ui.json
 int panelHeight = 185;        // bottom area (tabs + details), 96-dpi units; draggable
 bool draggingSplitter = false;
+int renderedTab = -1;
 void saveUiPreferences() {
     auto temp = dataDir / L"ui.tmp";
     json ui = {{"language", locale.code()},
@@ -79,7 +80,7 @@ void saveUiPreferences() {
         throw std::runtime_error("Cannot save UI preferences.");
 }
 std::thread closer;
-const COLORREF ink = RGB(26, 48, 57), muted = RGB(91, 111, 120), bg = RGB(249, 250, 251);
+const COLORREF ink = RGB(36, 43, 51), muted = RGB(105, 113, 122), bg = RGB(246, 247, 249);
 int px(int v) { return MulDiv(v, (int)dpi, 96); }
 void errorBox(HWND w, const std::exception &e) {
     MessageBox(w, wide(e.what()).c_str(), L"TorrentDesk", MB_ICONERROR);
@@ -102,9 +103,9 @@ void setFonts() {
         DeleteObject(titleFont);
     if (smallFont)
         DeleteObject(smallFont);
-    uiFont = CreateFont(-px(14), 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0,
+    uiFont = CreateFont(-px(13), 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0,
                         CLEARTYPE_QUALITY, 0, L"Segoe UI");
-    titleFont = CreateFont(-px(19), 0, 0, 0, FW_SEMIBOLD, 0, 0, 0, DEFAULT_CHARSET, 0, 0,
+    titleFont = CreateFont(-px(17), 0, 0, 0, FW_SEMIBOLD, 0, 0, 0, DEFAULT_CHARSET, 0, 0,
                            CLEARTYPE_QUALITY, 0, L"Segoe UI");
     smallFont = CreateFont(-px(12), 0, 0, 0, FW_NORMAL, 0, 0, 0, DEFAULT_CHARSET, 0, 0,
                            CLEARTYPE_QUALITY, 0, L"Segoe UI");
@@ -162,7 +163,7 @@ void createTooltips(HWND w) {
                              nullptr, appInstance, nullptr);
     if (!tooltip)
         return;
-    for (int i = 0; i < 6; ++i) {
+    for (int i = 0; i < 5; ++i) {
         TOOLINFO ti = {sizeof(ti)};
         ti.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
         ti.hwnd = w;
@@ -177,7 +178,7 @@ void updateCommands() {
         return;
     bool none = ListView_GetSelectedCount(table) == 0;
     bool any = !current.rows.empty();
-    for (int i = 0; i < 6; ++i)
+    for (int i = 0; i < 5; ++i)
         replaceText(GetDlgItem(mainWindow, 100 + i), tr(commandLabel(i, none)));
     EnableWindow(GetDlgItem(mainWindow, 101), any);
     EnableWindow(GetDlgItem(mainWindow, 102), any);
@@ -187,9 +188,9 @@ void layout() {
     RECT r;
     GetClientRect(mainWindow, &r);
     int width = r.right, height = r.bottom;
-    // The bottom area is resizable with the splitter between list and tabs; Help needs 260.
-    int bottom = std::max(panelHeight, TabCtrl_GetCurSel(tabs) == 3 ? 260 : 150);
-    int top = px(108);
+    // Help reserves room for attribution and the educational-use notice.
+    int bottom = std::max(panelHeight, TabCtrl_GetCurSel(tabs) == 3 ? 320 : 150);
+    int top = px(100);
     // The list always keeps at least 40% of the space (and 200 px) below the buttons.
     int tabY = std::max(top + std::max(px(200), (height - top) * 2 / 5), height - px(bottom));
     int area = std::max(px(77), height - tabY - px(73));
@@ -197,17 +198,17 @@ void layout() {
     MoveWindow(tabs, px(16), tabY, width - px(32), px(28), TRUE);
     MoveWindow(panel, px(18), tabY + px(34), width - px(36), area, TRUE);
     MoveWindow(helpPane, px(18), tabY + px(34), width - px(36), area, TRUE);
-    MoveWindow(languageCombo, width - px(164), px(13), px(148), px(250), TRUE);
+    MoveWindow(languageCombo, width - px(164), px(11), px(148), px(250), TRUE);
     MoveWindow(statusbar, 0, height - px(27), width, px(27), TRUE);
     int parts[] = {px(235), px(485), px(740), -1};
     SendMessage(statusbar, SB_SETPARTS, 4, (LPARAM)parts);
     // Command buttons sized to their (translated) labels, in three groups:
     // [Add]   [Start][Pause][Remove]          ...          [Settings][Tray]
-    int widths[6];
+    int widths[5];
     {
         auto dc = GetDC(mainWindow);
         auto old = SelectObject(dc, uiFont);
-        for (int i = 0; i < 6; ++i) {
+        for (int i = 0; i < 5; ++i) {
             int w = 0;
             for (int v = 0; v < 2; ++v) {
                 auto s = tr(commandLabel(i, v == 1));
@@ -215,57 +216,43 @@ void layout() {
                 GetTextExtentPoint32(dc, s.c_str(), (int)s.size(), &sz);
                 w = std::max(w, (int)sz.cx);
             }
-            widths[i] = std::max(px(88), w + px(16 + 8 + 22));
+            widths[i] = std::max(px(80), w + px(16 + 8 + 18));
         }
         SelectObject(dc, old);
         ReleaseDC(mainWindow, dc);
     }
-    int gap = px(6), group = px(18), y = px(66), h = px(30);
+    int gap = px(6), group = px(16), y = px(58), h = px(30);
     int x = px(16);
     for (int i = 0; i < 4; ++i) {
         MoveWindow(GetDlgItem(mainWindow, 100 + i), x, y, widths[i], h, TRUE);
         x += widths[i] + (i == 0 ? group : gap);
     }
     int right = width - px(16);
-    int left = std::max(x + group, right - widths[4] - gap - widths[5]);
+    int left = std::max(x + group, right - widths[4]);
     MoveWindow(GetDlgItem(mainWindow, 104), left, y, widths[4], h, TRUE);
-    MoveWindow(GetDlgItem(mainWindow, 105), left + widths[4] + gap, y, widths[5], h, TRUE);
     if (!userWidths) {
         int fixed = px(125 + 90 + 95 + 95 + 65 + 80 + 75 + 120);
         ListView_SetColumnWidth(table, 0, std::max(px(170), width - px(50) - fixed));
     }
     InvalidateRect(mainWindow, nullptr, FALSE);
 }
-// Header band in the Flow logo palette: navy bar, blue->cyan accent line.
-const COLORREF navy = RGB(10, 27, 66), navyText = RGB(150, 190, 235);
+// Quiet neutral header: the application mark is the only coloured branding.
 void paintHeader(HDC dc) {
     RECT r;
     GetClientRect(mainWindow, &r);
     FillRect(dc, &r, backgroundBrush);
-    RECT band = {0, 0, r.right, px(52)};
-    auto navyBrush = CreateSolidBrush(navy);
-    FillRect(dc, &band, navyBrush);
-    DeleteObject(navyBrush);
-    for (int x = 0; x < r.right; x += 4) {
-        double t = r.right ? (double)x / r.right : 0;
-        auto line = CreateSolidBrush(RGB(0, (int)(96 + 120 * t), (int)(240 - 10 * t)));
-        RECT seg = {x, px(52), std::min(x + 4, (int)r.right), px(52) + std::max(2, px(2))};
-        FillRect(dc, &seg, line);
-        DeleteObject(line);
-    }
-    DrawIconEx(dc, px(16), px(14), appIcon, px(24), px(24), 0, nullptr, DI_NORMAL);
-    text(dc, L"TorrentDesk", {px(48), px(8), px(320), px(44)}, titleFont, RGB(255, 255, 255));
-    {
-        auto old = SelectObject(dc, titleFont);
-        SIZE sz = {};
-        GetTextExtentPoint32(dc, L"TorrentDesk", 11, &sz);
-        SelectObject(dc, old);
-        int vx = px(48) + sz.cx + px(8);
-        text(dc, std::wstring(L"v") + TORRENTDESK_VERSION, {vx, px(13), vx + px(120), px(42)},
-             smallFont, navyText);
-    }
-    text(dc, L"Simulazione upload", {r.right - px(430), px(10), r.right - px(180), px(42)},
-         smallFont, navyText, DT_RIGHT | DT_SINGLELINE | DT_VCENTER);
+    RECT band = {0, 0, r.right, px(48)};
+    FillRect(dc, &band, (HBRUSH)GetStockObject(WHITE_BRUSH));
+    auto rule = CreateSolidBrush(RGB(224, 228, 233));
+    RECT line = {0, px(47), r.right, px(48)};
+    FillRect(dc, &line, rule);
+    DeleteObject(rule);
+    DrawIconEx(dc, px(16), px(14), appIcon, px(20), px(20), 0, nullptr, DI_NORMAL);
+    text(dc, L"TorrentDesk", {px(46), px(7), px(170), px(41)}, titleFont, ink);
+    text(dc, std::wstring(L"v") + TORRENTDESK_VERSION,
+         {px(176), px(9), px(280), px(40)}, smallFont, muted);
+    text(dc, L"Simulazione upload", {r.right - px(430), px(8), r.right - px(184), px(40)},
+         smallFont, muted, DT_RIGHT | DT_SINGLELINE | DT_VCENTER);
 }
 std::wstring describe(const TorrentRow &r) {
     std::wstring out = tr(L"Nome: ") + wide(r.meta.name) + tr(L"\r\nDimensione: ") +
@@ -285,10 +272,17 @@ std::wstring describe(const TorrentRow &r) {
 }
 void refreshPanel() {
     int tab = TabCtrl_GetCurSel(tabs);
-    ShowWindow(panel, tab == 3 ? SW_HIDE : SW_SHOW);
-    ShowWindow(helpPane, tab == 3 ? SW_SHOW : SW_HIDE);
+    bool changed = renderedTab != tab;
+    if (changed) {
+        // Change visibility once per transition, not on every scheduler refresh.
+        // Queue a fresh paint for the newly exposed child windows as well.
+        ShowWindow(panel, tab == 3 ? SW_HIDE : SW_SHOW);
+        ShowWindow(helpPane, tab == 3 ? SW_SHOW : SW_HIDE);
+        renderedTab = tab;
+        RedrawWindow(mainWindow, nullptr, nullptr,
+                     RDW_INVALIDATE | RDW_ERASE | RDW_ALLCHILDREN);
+    }
     if (tab == 3) {
-        InvalidateRect(helpPane, nullptr, TRUE);
         return;
     }
     if (tab == 1) {
@@ -698,7 +692,7 @@ void openSettings() {
 void setArtwork() {
     auto oldImages = std::move(commandImages);
     auto oldTab = tabImages;
-    for (int i = 0; i < 6; ++i) {
+    for (int i = 0; i < 5; ++i) {
         auto images = ImageList_Create(px(16), px(16), ILC_COLOR32, 1, 0);
         auto icon = (HICON)LoadImage(appInstance, MAKEINTRESOURCE(201 + i), IMAGE_ICON, px(16),
                                      px(16), LR_SHARED);
@@ -767,13 +761,14 @@ void beginExit() {
     } catch (...) {
     }
     closing = true;
-    for (int id = 100; id <= 105; ++id)
+    for (int id = 100; id <= 104; ++id)
         EnableWindow(GetDlgItem(mainWindow, id), FALSE);
     EnableWindow(languageCombo, FALSE);
     DragAcceptFiles(mainWindow, FALSE);
     closer = std::thread([] {
         engine->shutdown();
         closed = true;
+        PostMessage(mainWindow, WM_APP + 18, 0, 0);
     });
     refresh();
 }
@@ -804,6 +799,8 @@ void applyLanguage() {
     }
     SetWindowText(GetDlgItem(helpPane, 401), tr(L"Documentazione").c_str());
     SetWindowText(GetDlgItem(helpPane, 402), tr(L"Licenze").c_str());
+    SetWindowText(GetDlgItem(helpPane, 403),
+                  (tr(L"Autore: ") + L"<a href=\"https://github.com/Kyo89-sudo\">Kyo89-sudo</a>").c_str());
     layout();
     refresh();
 }
@@ -814,8 +811,8 @@ LRESULT CALLBACK helpProc(HWND w, UINT m, WPARAM a, LPARAM b) {
         RECT r;
         GetClientRect(w, &r);
         FillRect(dc, &r, backgroundBrush);
-        DrawIconEx(dc, px(8), px(10), appLogoIcon, px(112), px(112), 0, nullptr, DI_NORMAL);
-        text(dc, std::wstring(L"TorrentDesk ") + TORRENTDESK_VERSION, {px(144), px(5), r.right, px(38)},
+        DrawIconEx(dc, px(8), px(10), appLogoIcon, px(72), px(72), 0, nullptr, DI_NORMAL);
+        text(dc, std::wstring(L"TorrentDesk ") + TORRENTDESK_VERSION, {px(104), px(5), r.right, px(38)},
              titleFont, ink);
         auto info = tr(L"Applicazione didattica C++ / Win32 per Windows.") + L"\n" +
                     tr(L"Upload simulato e annunci HTTP/HTTPS. Nessun trasferimento P2P.") + L"\n" +
@@ -823,15 +820,29 @@ LRESULT CALLBACK helpProc(HWND w, UINT m, WPARAM a, LPARAM b) {
                     tr(closeToTray ? L"X nasconde nella tray (modificabile in Impostazioni). Per "
                                      L"chiudere: menu tray > Esci."
                                    : L"X chiude il programma (modificabile in Impostazioni).");
-        text(dc, info, {px(144), px(43), r.right - px(8), px(145)}, uiFont, muted,
+        text(dc, info, {px(104), px(66), r.right - px(8), px(132)}, uiFont, muted,
              DT_LEFT | DT_WORDBREAK);
+        text(dc, L"SOLO per scopi didattici. Non usare per barare o violare le regole dei tracker.",
+             {px(104), px(136), r.right - px(8), px(161)}, smallFont, ink, DT_LEFT | DT_WORDBREAK);
+        text(dc, L"Nei limiti consentiti dalla legge, l'autore non risponde di usi impropri o delle loro conseguenze.",
+             {px(104), px(162), r.right - px(8), px(189)}, smallFont, muted, DT_LEFT | DT_WORDBREAK);
         EndPaint(w, &ps);
         return 0;
     }
     if (m == WM_CREATE) {
-        control(w, L"BUTTON", L"Documentazione", WS_TABSTOP, 144, 150, 155, 30, 401);
-        control(w, L"BUTTON", L"Licenze", WS_TABSTOP, 310, 150, 110, 30, 402);
+        control(w, WC_LINK,
+                (tr(L"Autore: ") + L"<a href=\"https://github.com/Kyo89-sudo\">Kyo89-sudo</a>").c_str(),
+                WS_TABSTOP, 104, 40, 400, 22, 403);
+        control(w, L"BUTTON", L"Documentazione", WS_TABSTOP, 104, 192, 155, 30, 401);
+        control(w, L"BUTTON", L"Licenze", WS_TABSTOP, 270, 192, 110, 30, 402);
         return 0;
+    }
+    if (m == WM_NOTIFY) {
+        auto header = reinterpret_cast<NMHDR *>(b);
+        if (header->idFrom == 403 && (header->code == NM_CLICK || header->code == NM_RETURN)) {
+            ShellExecute(w, L"open", L"https://github.com/Kyo89-sudo", nullptr, nullptr, SW_SHOWNORMAL);
+            return 0;
+        }
     }
     if (m == WM_COMMAND && (LOWORD(a) == 401 || LOWORD(a) == 402)) {
         auto lang = locale.code() == "it" ? L"it" : L"en";
@@ -861,11 +872,14 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
             return 0;
         }
         switch (m) {
+        case WM_APP + 18:
+            if (closing && closed) DestroyWindow(w);
+            return 0;
         case WM_CREATE: {
             mainWindow = w;
             dpi = GetDpiForWindow(w);
             setFonts();
-            for (int i = 0; i < 6; ++i)
+            for (int i = 0; i < 5; ++i)
                 control(w, L"BUTTON", commandLabel(i, false), WS_TABSTOP | BS_PUSHBUTTON, 0, 0,
                         100, 35, 100 + i);
             table =
@@ -893,7 +907,8 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
                 ListView_InsertColumn(table, i, &c);
             }
             updateSortArrow();
-            tabs = CreateWindowEx(0, WC_TABCONTROL, L"Dettagli", WS_CHILD | WS_VISIBLE | WS_TABSTOP,
+            tabs = CreateWindowEx(0, WC_TABCONTROL, L"Dettagli",
+                                  WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_CLIPSIBLINGS | TCS_SINGLELINE,
                                   0, 0, 100, 30, w, (HMENU)121, appInstance, nullptr);
             for (auto s : {L"Dettagli", L"Registro attività", L"Profili e contatori", L"Aiuto"}) {
                 TCITEM t = {};
@@ -908,7 +923,8 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
             statusbar =
                 CreateWindowEx(0, STATUSCLASSNAME, L"", WS_CHILD | WS_VISIBLE | SBARS_SIZEGRIP, 0,
                                0, 100, 20, w, nullptr, appInstance, nullptr);
-            helpPane = CreateWindowEx(0, L"TorrentDeskHelp", L"", WS_CHILD, 0, 0, 100, 100, w,
+            helpPane = CreateWindowEx(0, L"TorrentDeskHelp", L"",
+                                     WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS, 0, 0, 100, 100, w,
                                       nullptr, appInstance, nullptr);
             languageCombo = control(w, L"COMBOBOX", L"", WS_TABSTOP | CBS_DROPDOWNLIST | WS_VSCROLL,
                                     0, 0, 140, 250, 130);
@@ -943,7 +959,7 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
             return 0;
         }
         case WM_SIZE:
-            if (table)
+            if (table && a != SIZE_MINIMIZED)
                 layout();
             return 0;
         case WM_DPICHANGED: {
@@ -1033,7 +1049,7 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
             if (h->code == TTN_GETDISPINFO && h->hwndFrom == tooltip) {
                 auto info = (NMTTDISPINFO *)b;
                 int id = GetDlgCtrlID((HWND)h->idFrom);
-                if (id >= 100 && id <= 105) {
+                if (id >= 100 && id <= 104) {
                     tipBuffer = tr(commandTip(id - 100));
                     info->lpszText = tipBuffer.data();
                 }
@@ -1108,7 +1124,7 @@ LRESULT CALLBACK proc(HWND w, UINT m, WPARAM a, LPARAM b) {
                         return CDRF_NOTIFYITEMDRAW;
                     if (d->nmcd.dwDrawStage == CDDS_ITEMPREPAINT) {
                         auto i = (size_t)d->nmcd.dwItemSpec;
-                        d->clrTextBk = i % 2 ? RGB(248, 250, 251) : RGB(255, 255, 255);
+                        d->clrTextBk = i % 2 ? RGB(250, 251, 252) : RGB(255, 255, 255);
                         // Red: announce errors. Amber: accepted with a tracker warning.
                         d->clrText = i >= current.rows.size()         ? ink
                                      : current.rows[i].errors > 0     ? RGB(164, 63, 40)
@@ -1336,7 +1352,7 @@ int WINAPI wWinMain(HINSTANCE h, HINSTANCE, LPWSTR, int n) {
         appInstance = h;
         SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         INITCOMMONCONTROLSEX init = {sizeof(init),
-                                     ICC_LISTVIEW_CLASSES | ICC_TAB_CLASSES | ICC_STANDARD_CLASSES};
+                                     ICC_LISTVIEW_CLASSES | ICC_TAB_CLASSES | ICC_STANDARD_CLASSES | ICC_LINK_CLASS};
         InitCommonControlsEx(&init);
         wchar_t path[32768];
         if (!GetModuleFileName(nullptr, path, 32768))

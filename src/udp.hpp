@@ -53,12 +53,12 @@ struct Socket {
 // BEP 15 uses 15 * 2^n s retries; a desktop app needs a bounded budget, so we use
 // short attempts (2 s, 4 s) and let the scheduler's back-off handle the rest.
 inline std::string exchange(SOCKET s, const std::string &request, uint32_t action, uint32_t tx,
-                            size_t minimum, uint64_t &received) {
-    for (int attempt = 0; attempt < 2; ++attempt) {
+                            size_t minimum, uint64_t &received, bool fastStop = false) {
+    for (int attempt = 0; attempt < (fastStop ? 1 : 2); ++attempt) {
         if (send(s, request.data(), (int)request.size(), 0) != (int)request.size())
             throw std::runtime_error("Invio UDP fallito (Winsock " +
                                      std::to_string(WSAGetLastError()) + ").");
-        DWORD timeout = 2000u << attempt;
+        DWORD timeout = fastStop ? 750u : 2000u << attempt;
         setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout, sizeof(timeout));
         auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout);
         while (std::chrono::steady_clock::now() < deadline) {
@@ -97,7 +97,7 @@ inline std::string exchange(SOCKET s, const std::string &request, uint32_t actio
 inline UdpReply udpAnnounce(const std::string &url, const std::string &infohash,
                             const std::string &peer, const std::string &key, uint64_t uploaded,
                             const std::string &event, int port, int numwant, uint32_t random,
-                            int floor = 30) {
+                            int floor = 30, bool fastStop = false) {
     using namespace udpdetail;
     if (infohash.size() != 20 || peer.size() != 20)
         throw std::runtime_error("Annuncio UDP: infohash o peer_id non validi.");
@@ -149,7 +149,7 @@ inline UdpReply udpAnnounce(const std::string &url, const std::string &infohash,
     put64(connectReq, 0x41727101980ull);
     put32(connectReq, 0);
     put32(connectReq, tx);
-    auto connected = exchange(sock.s, connectReq, 0, tx, 16, reply.received);
+    auto connected = exchange(sock.s, connectReq, 0, tx, 16, reply.received, fastStop);
     auto connection = get64(connected.data() + 8);
 
     uint32_t keyValue = 0;
@@ -175,7 +175,7 @@ inline UdpReply udpAnnounce(const std::string &url, const std::string &infohash,
     put32(req, (uint32_t)(numwant < 0 ? -1 : numwant));
     req += (char)((port >> 8) & 0xff);
     req += (char)(port & 0xff);
-    auto announced = exchange(sock.s, req, 1, tx, 20, reply.received);
+    auto announced = exchange(sock.s, req, 1, tx, 20, reply.received, fastStop);
     auto interval = (int64_t)get32(announced.data() + 8);
     if (interval <= 0 || interval > 7 * 86400)
         throw std::runtime_error("Intervallo tracker non valido.");

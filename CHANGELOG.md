@@ -2,6 +2,16 @@
 
 All notable changes to TorrentDesk. Versions follow [Semantic Versioning](https://semver.org/); 0.x releases are previews.
 
+## [0.4.2] — 2026-10-22
+
+- More restrained desktop UI: neutral header, monochrome command icons and compact typography.
+- Removed the Tray toolbar button; the close-to-tray setting and notification menu remain available.
+- Fixed repaint isolation in Help, panel visibility transitions and minimized-window layout handling.
+- Faster graceful exit: no 200 ms scheduler sleep between stopped announces, shorter shutdown-only HTTP/UDP timeouts, no tracker failover during exit, and immediate window notification when shutdown completes.
+- Shutdown remains best effort: the four-second scheduling budget is not a strict wall-clock guarantee for an already running request or DNS resolution. Session saving still uses temporary-file replacement.
+- Clickable author credit for Kyo89-sudo and bilingual educational-use-only/misuse notice.
+- Installer uses uncompressed application files; no executable packer or obfuscator added. Binaries remain unsigned.
+
 ## [0.4.1] — 2026-10-21
 
 ### Added

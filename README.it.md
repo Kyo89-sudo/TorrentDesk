@@ -6,7 +6,7 @@
 
 TorrentDesk è un'applicazione didattica che carica file `.torrent` e dialoga con i loro tracker come farebbe un client BitTorrent: annunci started, periodici e stopped, intervalli, seed/leecher. **Upload e velocità sono simulati** — nessun contenuto viene mai trasferito ai peer — mentre le richieste ai tracker sono reali. È un unico eseguibile nativo: niente Java, .NET, Electron o runtime da installare.
 
-> **Anteprima (0.4.1).** Prototipo funzionante con compatibilità client parziale. Vedi [Limiti](#limiti).
+> **Anteprima (0.4.2).** Prototipo funzionante con compatibilità client parziale. Vedi [Limiti](#limiti).
 
 ## Download
 
@@ -25,7 +25,7 @@ Richiede Windows 10/11 x64. Gli eseguibili non sono ancora firmati, quindi Smart
 1. Aggiungi i `.torrent` con **Aggiungi…** o trascinandoli nella finestra.
 2. In **Impostazioni** scegli range di upload, sessioni simultanee, ratio obiettivo e profilo client.
 3. Premi **Avvia tutti** (oppure seleziona le righe e premi **Avvia**). Osserva stato, upload simulato, ratio, seed/leecher e prossimo annuncio.
-4. **Pausa** invia l'annuncio stopped. **Tray** nasconde la finestra mentre le sessioni continuano.
+4. **Pausa** invia l'annuncio stopped. La **X**, se configurata nelle Impostazioni, nasconde la finestra mentre le sessioni continuano.
 
 Arrivi da JOAL? **Impostazioni → Importa configurazione…** legge il suo `config.json`; poi trascina i `.torrent` dalla sua cartella `torrents`.
 

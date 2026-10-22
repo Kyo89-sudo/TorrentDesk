@@ -190,6 +190,9 @@
     "Copia infohash": "Copy infohash",
     "Rimuovere i torrent selezionati?": "Remove the selected torrents?",
     "Avviso del tracker: ": "Tracker warning: ",
-    "Tracker ha rifiutato l'annuncio: ": "Tracker rejected the announce: "
+    "Tracker ha rifiutato l'annuncio: ": "Tracker rejected the announce: ",
+    "Autore: ": "Author: ",
+    "SOLO per scopi didattici. Non usare per barare o violare le regole dei tracker.": "For educational purposes ONLY. Do not use to cheat or violate tracker rules.",
+    "Nei limiti consentiti dalla legge, l'autore non risponde di usi impropri o delle loro conseguenze.": "To the extent permitted by law, the author accepts no liability for misuse or its consequences."
   }
 }
